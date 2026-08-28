@@ -2,20 +2,29 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AppNav } from "@/components/AppNav";
+import { BottomSheet } from "@/components/BottomSheet";
 import { ChartPaper } from "@/components/ChartPaper";
 import { MicButton, Waveform } from "@/components/MicButton";
+import { Spinner } from "@/components/Spinner";
+import { SummaryCard } from "@/components/SummaryCard";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
-import { residentCanSubmit } from "@/lib/fieldUtils";
+import {
+  countReviewFields,
+  getFirstReviewField,
+  residentCanSubmit,
+} from "@/lib/fieldUtils";
 import { todayLabel, nowTime } from "@/lib/facility";
 import {
   applyClip,
   createInitialResidents,
   getClips,
+  getFieldLabel,
 } from "@/lib/memoDay";
 import { addHandoffRecord } from "@/lib/recordsStore";
 import type { MemoClip, RecordedClip, ResidentDraft } from "@/lib/types";
 
 type RecordMap = Record<string, RecordedClip[]>;
+type DockMode = "record" | "busy" | "confirm" | "submit" | "records";
 
 export function MemoApp() {
   const [residents, setResidents] = useState<ResidentDraft[]>(createInitialResidents);
@@ -23,9 +32,12 @@ export function MemoApp() {
   const [recordedMap, setRecordedMap] = useState<RecordMap>({});
   const [recordingId, setRecordingId] = useState<string | null>(null);
   const [spoken, setSpoken] = useState("");
+  const [writingLabel, setWritingLabel] = useState("");
   const [highlightKeys, setHighlightKeys] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
   const [submittedIds, setSubmittedIds] = useState<string[]>([]);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [viewFade, setViewFade] = useState(false);
 
   const speech = useSpeechRecognition();
   const processedSpeechRef = useRef("");
@@ -38,24 +50,60 @@ export function MemoApp() {
   const allDone = recorded.length >= clips.length;
   const submitted = submittedIds.includes(resident.id);
   const canSubmit = allDone && !submitted && residentCanSubmit(resident);
+  const reviewCount = countReviewFields(resident);
+  const firstReview = getFirstReviewField(resident);
   const dateLabel = todayLabel();
+  const recording = !!recordingId || speech.listening;
 
-  const runClip = useCallback(
-    (clip: MemoClip) => {
-      setBusy(true);
-      setRecordingId(clip.id);
-      setSpoken("");
+  const dockMode: DockMode = submitted
+    ? "records"
+    : recording
+      ? "record"
+      : busy
+        ? "busy"
+        : allDone && reviewCount > 0
+          ? "confirm"
+          : allDone && canSubmit
+            ? "submit"
+            : "record";
 
-      let i = 0;
-      const typeTimer = setInterval(() => {
-        i += 1;
-        setSpoken(clip.transcript.slice(0, i));
-        if (i >= clip.transcript.length) clearInterval(typeTimer);
-      }, 28);
+  const statusText = (() => {
+    if (submitted) return "提出済";
+    if (recording) return spoken ? spoken : "録音中";
+    if (busy && writingLabel) return `${writingLabel}を書き込み中…`;
+    if (busy) return "書き込み中…";
+    if (allDone && reviewCount > 0) return `要対応 ${reviewCount}`;
+    if (allDone && canSubmit) return "提出できます";
+    if (nextClip) return `次 ${nextClip.time}`;
+    return "録音で申し送りを作る";
+  })();
+
+  const runClip = useCallback((clip: MemoClip) => {
+    setBusy(true);
+    setRecordingId(clip.id);
+    setSpoken("");
+    setWritingLabel("");
+
+    let i = 0;
+    const typeTimer = setInterval(() => {
+      i += 1;
+      setSpoken(clip.transcript.slice(0, i));
+      if (i >= clip.transcript.length) clearInterval(typeTimer);
+    }, 28);
+
+    const writeDelay = Math.max(clip.transcript.length * 28 + 200, clip.durationSec * 80 + 400);
+
+    setTimeout(() => {
+      clearInterval(typeTimer);
+      setSpoken(clip.transcript);
+      setRecordingId(null);
+
+      const lastPatch = clip.patches.at(-1);
+      if (lastPatch) {
+        setWritingLabel(getFieldLabel(clip.residentId, lastPatch.doc, lastPatch.fieldKey));
+      }
 
       setTimeout(() => {
-        clearInterval(typeTimer);
-        setSpoken(clip.transcript);
         setResidents((prev) =>
           prev.map((r) => (r.id === clip.residentId ? applyClip(r, clip) : r))
         );
@@ -68,12 +116,11 @@ export function MemoApp() {
           ...prev,
           [clip.residentId]: [...(prev[clip.residentId] ?? []), { ...clip, recordedAt: clip.time }],
         }));
-        setRecordingId(null);
+        setWritingLabel("");
         setBusy(false);
-      }, Math.max(clip.transcript.length * 28 + 200, clip.durationSec * 80 + 400));
-    },
-    []
-  );
+      }, 450);
+    }, writeDelay);
+  }, []);
 
   const handleSlot = (clip: MemoClip, index: number) => {
     if (submitted || busy) return;
@@ -110,7 +157,7 @@ export function MemoApp() {
     );
   };
 
-  const onConfirm = (doc: "handoff" | "progress", key: string) => {
+  const confirmField = (doc: "handoff" | "progress", key: string) => {
     setResidents((prev) =>
       prev.map((r) => {
         if (r.id !== activeId) return r;
@@ -132,6 +179,11 @@ export function MemoApp() {
     );
   };
 
+  const onConfirmDock = () => {
+    if (!firstReview) return;
+    confirmField(firstReview.doc, firstReview.field.key);
+  };
+
   const onNotes = (value: string) => {
     setResidents((prev) => prev.map((r) => (r.id === activeId ? { ...r, notes: value } : r)));
   };
@@ -139,8 +191,12 @@ export function MemoApp() {
   const handleSubmit = () => {
     if (!canSubmit) return;
     addHandoffRecord(resident, dateLabel, nowTime());
-    setSubmittedIds((prev) => [...prev, resident.id]);
-    setSpoken("");
+    setViewFade(true);
+    setTimeout(() => {
+      setSubmittedIds((prev) => [...prev, resident.id]);
+      setSpoken("");
+      setViewFade(false);
+    }, 220);
   };
 
   const resetAll = () => {
@@ -153,35 +209,138 @@ export function MemoApp() {
     speech.reset();
   };
 
+  const nameRow = (
+    <div className="nameRow">
+      {residents.map((r) => (
+        <button
+          key={r.id}
+          type="button"
+          className={`nameChip ${activeId === r.id ? "active" : ""} ${r.priority === "urgent" ? "urgent" : ""} ${submittedIds.includes(r.id) ? "done" : ""}`}
+          onClick={() => {
+            setActiveId(r.id);
+            const last = (recordedMap[r.id] ?? []).at(-1);
+            setSpoken(last?.transcript ?? "");
+          }}
+        >
+          {r.room} {r.name.split(" ")[0]}
+        </button>
+      ))}
+    </div>
+  );
+
   return (
     <div className="appShell">
       <AppNav />
 
-      <div className="workBody">
-        <div className="nameRow">
-          {residents.map((r) => (
-            <button
-              key={r.id}
-              type="button"
-              className={`nameChip ${activeId === r.id ? "active" : ""} ${r.priority === "urgent" ? "urgent" : ""} ${submittedIds.includes(r.id) ? "done" : ""}`}
-              onClick={() => {
-                setActiveId(r.id);
-                const last = (recordedMap[r.id] ?? []).at(-1);
-                setSpoken(last?.transcript ?? "");
-              }}
-            >
-              {r.room} {r.name.split(" ")[0]}
+      <div className={`workBody ${viewFade ? "viewFade" : ""}`}>
+        {submitted ? (
+          <div className="workMain workMainConfirm">
+            {nameRow}
+            <p className="statusLine statusLineDone">{statusText}</p>
+            <SummaryCard resident={resident} dateLabel={dateLabel} submitted highlightKeys={highlightKeys} />
+            <button type="button" className="textLink" onClick={() => setSheetOpen(true)}>
+              カルテを見る
             </button>
-          ))}
-        </div>
+            <button
+              type="button"
+              className="textLink textLinkMuted"
+              onClick={() => setSubmittedIds((ids) => ids.filter((id) => id !== resident.id))}
+            >
+              戻る
+            </button>
+          </div>
+        ) : (
+          <div className="workMain">
+            {nameRow}
+            <p
+              className={`statusLine ${recording ? "statusLineRec" : ""} ${reviewCount > 0 && allDone ? "statusLineWarn" : ""}`}
+              title={statusText}
+            >
+              {statusText}
+            </p>
+            <SummaryCard resident={resident} dateLabel={dateLabel} highlightKeys={highlightKeys} />
+            <div className="workActions">
+              {!resident.notes && (
+                <button type="button" className="textLink" onClick={() => setSheetOpen(true)}>
+                  備考
+                </button>
+              )}
+              {resident.notes ? (
+                <button type="button" className="textLink" onClick={() => setSheetOpen(true)}>
+                  カルテを見る
+                </button>
+              ) : null}
+            </div>
+            <ul className="clipGrid">
+              {clips.map((clip, index) => {
+                const isRec = index < recorded.length;
+                const isNext = index === nextIndex;
+                const isOn = recordingId === clip.id;
+                return (
+                  <li key={clip.id}>
+                    <button
+                      type="button"
+                      className={`clipCell ${isRec ? "done" : ""} ${isNext ? "next" : ""} ${isOn ? "recording" : ""}`}
+                      disabled={!isRec && (!isNext || busy)}
+                      onClick={() => handleSlot(clip, index)}
+                    >
+                      <span className="clipTime">{clip.time}</span>
+                      {isRec && <span className="clipSummary">{clip.summary}</span>}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
+      </div>
 
-        {spoken ? (
-          <blockquote className="spoken">
-            {recordingId ? <Waveform /> : null}
-            <p>{spoken}</p>
-          </blockquote>
-        ) : null}
+      <div className="dock dockSingle">
+        {speech.error && <p className="micError">{speech.error}</p>}
 
+        {dockMode === "record" && (
+          <>
+            {recording && <Waveform />}
+            <MicButton
+              recording={recording}
+              disabled={busy || !nextClip}
+              onClick={handleRecord}
+            />
+          </>
+        )}
+
+        {dockMode === "busy" && (
+          <button type="button" className="btnPrimary btnBusy" disabled>
+            <Spinner />
+            書き込み中…
+          </button>
+        )}
+
+        {dockMode === "confirm" && (
+          <button type="button" className="btnPrimary btnConfirm" onClick={onConfirmDock}>
+            確認
+          </button>
+        )}
+
+        {dockMode === "submit" && (
+          <button type="button" className="btnPrimary" onClick={handleSubmit}>
+            提出
+          </button>
+        )}
+
+        {dockMode === "records" && (
+          <>
+            <a href="/records" className="btnPrimary dockLink">
+              記録
+            </a>
+            <button type="button" className="btnSecondary" onClick={resetAll}>
+              はじめから
+            </button>
+          </>
+        )}
+      </div>
+
+      <BottomSheet open={sheetOpen} title="申し送りカルテ" onClose={() => setSheetOpen(false)}>
         <ChartPaper
           resident={resident}
           dateLabel={dateLabel}
@@ -189,66 +348,10 @@ export function MemoApp() {
           allowEdit={allDone && !submitted}
           highlightKeys={highlightKeys}
           onEdit={onEdit}
-          onConfirm={onConfirm}
+          onConfirm={confirmField}
           onNotes={onNotes}
         />
-
-        {!submitted && (
-          <ul className="clipGrid">
-            {clips.map((clip, index) => {
-              const isRec = index < recorded.length;
-              const isNext = index === nextIndex;
-              const isOn = recordingId === clip.id;
-              return (
-                <li key={clip.id}>
-                  <button
-                    type="button"
-                    className={`clipCell ${isRec ? "done" : ""} ${isNext ? "next" : ""} ${isOn ? "recording" : ""}`}
-                    disabled={!isRec && (!isNext || busy)}
-                    onClick={() => handleSlot(clip, index)}
-                  >
-                    <span className="clipTime">{clip.time}</span>
-                    {isOn && <Waveform />}
-                    {isRec && <span className="clipSummary">{clip.summary}</span>}
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </div>
-
-      <div className="dock">
-        {speech.error && <p className="micError">{speech.error}</p>}
-        {!submitted && (
-          <MicButton
-            recording={!!recordingId || speech.listening}
-            disabled={busy || (!nextClip && !speech.listening)}
-            onClick={handleRecord}
-          />
-        )}
-        {allDone && !submitted && (
-          <button type="button" className="btnPrimary" disabled={!canSubmit} onClick={handleSubmit}>
-            提出
-          </button>
-        )}
-        {allDone && !submitted && !canSubmit && (
-          <p className="dockHint">要対応の「確認」を押すと提出できます</p>
-        )}
-        {submitted && (
-          <>
-            <a href="/records" className="btnPrimary dockLink">
-              記録
-            </a>
-            <button type="button" className="btnSecondary" onClick={() => setSubmittedIds((ids) => ids.filter((id) => id !== resident.id))}>
-              戻る
-            </button>
-            <button type="button" className="btnSecondary" onClick={resetAll}>
-              はじめから
-            </button>
-          </>
-        )}
-      </div>
+      </BottomSheet>
     </div>
   );
 }

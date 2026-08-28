@@ -210,6 +210,11 @@ export function getClips(residentId: string): MemoClip[] {
   return CLIPS_BY_RESIDENT[residentId] ?? [];
 }
 
+export function getFieldLabel(residentId: string, doc: "handoff" | "progress", fieldKey: string): string {
+  const fields = doc === "handoff" ? BASE[residentId]?.handoff : BASE[residentId]?.progress;
+  return fields?.find((f) => f.key === fieldKey)?.label ?? fieldKey;
+}
+
 export function applyClip(resident: ResidentDraft, clip: MemoClip): ResidentDraft {
   const next: ResidentDraft = {
     ...resident,

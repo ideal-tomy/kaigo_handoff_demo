@@ -97,7 +97,7 @@ export function RecordsBoard() {
   return (
     <div className="appShell">
       <AppNav />
-      <div className="workBody">
+      <div className="workBody workBodyScroll">
         <div className="nameRow">
           <button type="button" className={`nameChip ${scope === "mine" ? "active" : ""}`} onClick={() => setScope("mine")}>
             自分
