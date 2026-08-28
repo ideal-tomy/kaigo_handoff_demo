@@ -23,6 +23,7 @@ export type MemoClip = {
   id: string;
   time: string;
   transcript: string;
+  summaryByResident: Record<string, string>;
   durationSec: number;
   updates: Array<{
     residentId: string;

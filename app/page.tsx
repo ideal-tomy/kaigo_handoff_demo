@@ -1,5 +1,5 @@
-import { HubView } from "@/components/HubView";
+import { MemoApp } from "@/components/MemoApp";
 
 export default function HomePage() {
-  return <HubView />;
+  return <MemoApp />;
 }

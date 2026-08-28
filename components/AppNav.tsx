@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const LINKS = [
-  { href: "/memo", label: "申し送り" },
+  { href: "/", label: "申し送り" },
   { href: "/karte", label: "面談記録" },
 ] as const;
 
@@ -19,7 +19,7 @@ export function AppNav({ title }: { title?: string }) {
           <Link
             key={link.href}
             href={link.href}
-            className={`appNavLink ${pathname === link.href ? "active" : ""}`}
+            className={`appNavLink ${pathname === link.href || (link.href === "/" && pathname === "/memo") ? "active" : ""}`}
           >
             {link.label}
           </Link>

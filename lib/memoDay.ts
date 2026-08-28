@@ -14,6 +14,12 @@ export const MEMO_CLIPS: MemoClip[] = [
     durationSec: 14,
     transcript:
       "203田中さん、今朝36.8。食欲まあまあ。208鈴木さん、夜間トイレ2回って夜勤から。105山田さんは特に問題なさそう。112佐藤さん、起床後の血圧安定。",
+    summaryByResident: {
+      tanaka: "36.8℃",
+      yamada: "特記なし",
+      suzuki: "夜間トイレ2回",
+      sato: "血圧 安定",
+    },
     updates: [
       { residentId: "tanaka", doc: "progress", fieldKey: "vitals", value: "36.8℃", highlight: true },
       { residentId: "tanaka", doc: "progress", fieldKey: "appetite", value: "まあまあ", highlight: true },
@@ -28,6 +34,12 @@ export const MEMO_CLIPS: MemoClip[] = [
     durationSec: 16,
     transcript:
       "田中さん主食半分。水分少なめ。山田さんむせたけど大丈夫そう。鈴木さんは完食。佐藤さん、昼食後に少し眠そう。",
+    summaryByResident: {
+      tanaka: "主食 半分",
+      yamada: "むせあり",
+      suzuki: "完食",
+      sato: "眠気",
+    },
     updates: [
       { residentId: "tanaka", doc: "progress", fieldKey: "meal", value: "主食 半分", highlight: true },
       { residentId: "tanaka", doc: "progress", fieldKey: "hydration", value: "少量", highlight: true },
@@ -42,6 +54,12 @@ export const MEMO_CLIPS: MemoClip[] = [
     durationSec: 18,
     transcript:
       "田中さん午後ちょっと熱っぽい、37.4。解熱剤はまだ出してない、ノート確認して。山田さんのむせは昼以降なし。鈴木さん変化なし。佐藤さんも特に変化なし。",
+    summaryByResident: {
+      tanaka: "37.4℃",
+      yamada: "むせなし",
+      suzuki: "変化なし",
+      sato: "変化なし",
+    },
     updates: [
       {
         residentId: "tanaka",

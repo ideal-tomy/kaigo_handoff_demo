@@ -1,11 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { AppNav } from "@/components/AppNav";
 import { MicButton, Waveform } from "@/components/MicButton";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
-import { allResidentsFixed, fieldNeedsFix } from "@/lib/fieldUtils";
+import { fieldNeedsFix, residentCanSubmit } from "@/lib/fieldUtils";
 import {
   MEMO_CLIPS,
   applyClip,
@@ -29,7 +28,7 @@ export function MemoApp() {
   const [highlightKeys, setHighlightKeys] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
   const [inbox, setInbox] = useState<InboxItem[]>([]);
-  const [canSubmit, setCanSubmit] = useState(false);
+  const [expandedClipId, setExpandedClipId] = useState<string | null>(null);
 
   const speech = useSpeechRecognition();
   const processedSpeechRef = useRef("");
@@ -37,45 +36,63 @@ export function MemoApp() {
   const nextClipIndex = recorded.length;
   const nextClip = MEMO_CLIPS[nextClipIndex] ?? null;
   const allClipsDone = recorded.length >= MEMO_CLIPS.length;
+  const activeResident = residents.find((r) => r.id === activeResidentId) ?? residents[0];
+  const fields = docTab === "handoff" ? activeResident.handoff : activeResident.progress;
+  const canSubmit = allClipsDone && residentCanSubmit(activeResident);
 
-  useEffect(() => {
-    if (allClipsDone) {
-      setCanSubmit(allResidentsFixed(residents));
-    }
-  }, [allClipsDone, residents]);
+  const runClip = useCallback((clip: MemoClip) => {
+    setBusy(true);
+    setRecordingClipId(clip.id);
+    setExpandedClipId(null);
 
-  const runClip = useCallback(
-    (clip: MemoClip) => {
-      setBusy(true);
-      setRecordingClipId(clip.id);
+    setTimeout(() => {
+      setResidents((prev) => applyClip(prev, clip));
 
-      setTimeout(() => {
-        setResidents((prev) => applyClip(prev, clip));
+      const keys = new Set<string>();
+      clip.updates.forEach((u) => {
+        if (u.highlight) keys.add(`${u.residentId}:${u.doc}:${u.fieldKey}`);
+      });
+      setHighlightKeys(keys);
+      setTimeout(() => setHighlightKeys(new Set()), 1800);
 
-        const keys = new Set<string>();
-        clip.updates.forEach((u) => {
-          if (u.highlight) keys.add(`${u.residentId}:${u.doc}:${u.fieldKey}`);
-        });
-        setHighlightKeys(keys);
-        setTimeout(() => setHighlightKeys(new Set()), 2400);
+      setRecorded((prev) => [
+        ...prev,
+        {
+          ...clip,
+          recordedAt: new Date().toLocaleTimeString("ja-JP", {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+        },
+      ]);
+      setRecordingClipId(null);
+      setBusy(false);
 
-        setRecorded((prev) => [
-          ...prev,
-          { ...clip, recordedAt: new Date().toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" }) },
-        ]);
-        setRecordingClipId(null);
-        setBusy(false);
-
-        const firstUpdated = clip.updates[0]?.residentId;
-        if (firstUpdated) setActiveResidentId(firstUpdated);
-      }, clip.durationSec * 80 + 600);
-    },
-    []
-  );
+      const reviewOnHandoff = clip.updates.some(
+        (u) => u.residentId === activeResidentId && u.doc === "handoff" && u.needsReview
+      );
+      if (reviewOnHandoff) setDocTab("handoff");
+    }, clip.durationSec * 70 + 500);
+  }, [activeResidentId]);
 
   const handleClipTap = (clip: MemoClip, index: number) => {
+    const isRecorded = index < recorded.length;
+    if (isRecorded) {
+      setExpandedClipId((id) => (id === clip.id ? null : clip.id));
+      return;
+    }
     if (busy || index !== nextClipIndex) return;
     runClip(clip);
+  };
+
+  const handleDockRecord = () => {
+    if (speech.listening) {
+      speech.stop();
+      return;
+    }
+    if (nextClip && !busy) {
+      runClip(nextClip);
+    }
   };
 
   useEffect(() => {
@@ -86,9 +103,6 @@ export function MemoApp() {
     runClip({ ...nextClip, transcript: text });
   }, [speech.listening, speech.transcript, busy, nextClip, runClip]);
 
-  const activeResident = residents.find((r) => r.id === activeResidentId) ?? residents[0];
-  const fields = docTab === "handoff" ? activeResident.handoff : activeResident.progress;
-
   const updateField = (key: string, value: string) => {
     setResidents((prev) =>
       prev.map((r) => {
@@ -96,23 +110,31 @@ export function MemoApp() {
         const target = docTab === "handoff" ? "handoff" : "progress";
         return {
           ...r,
-          [target]: r[target].map((f) => (f.key === key ? { ...f, value } : f)),
+          [target]: r[target].map((f) =>
+            f.key === key ? { ...f, value, needsReview: false } : f
+          ),
         };
       })
     );
   };
 
   const handleSubmit = () => {
-    const urgent = residents.find((r) => r.priority === "urgent") ?? residents[0];
-    const nextAction = urgent.handoff.find((f) => f.key === "nextAction")?.value ?? "";
-    setInbox([
+    const nextAction =
+      activeResident.handoff.find((f) => f.key === "nextAction")?.value ||
+      activeResident.progress.find((f) => f.value)?.value ||
+      "";
+    setInbox((prev) => [
       {
         id: `inbox-${Date.now()}`,
-        resident: urgent.name,
+        resident: activeResident.name,
         summary: nextAction,
-        priority: urgent.priority,
-        submittedAt: new Date().toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" }),
+        priority: activeResident.priority,
+        submittedAt: new Date().toLocaleTimeString("ja-JP", {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
       },
+      ...prev,
     ]);
     setView("inbox");
   };
@@ -122,15 +144,15 @@ export function MemoApp() {
     setRecorded([]);
     setActiveResidentId("tanaka");
     setDocTab("progress");
-    setCanSubmit(false);
     setView("work");
+    setExpandedClipId(null);
     processedSpeechRef.current = "";
     speech.reset();
   };
 
   return (
     <div className="appShell">
-      <AppNav title="申し送り" />
+      <AppNav />
 
       {view === "inbox" ? (
         <div className="inboxPanel">
@@ -154,49 +176,16 @@ export function MemoApp() {
               </div>
             ))}
           </div>
-          <button type="button" className="btnSecondary" style={{ maxWidth: 280 }} onClick={reset}>
+          <button type="button" className="btnSecondary" onClick={() => setView("work")}>
             戻る
+          </button>
+          <button type="button" className="btnSecondary" onClick={reset}>
+            はじめから
           </button>
         </div>
       ) : (
-        <div className="mainGrid">
-          <section className="panel">
-            <ul className="clipList">
-              {MEMO_CLIPS.map((clip, index) => {
-                const isRecorded = index < recorded.length;
-                const isNext = index === nextClipIndex;
-                const isRecording = recordingClipId === clip.id;
-                const rec = recorded[index];
-                return (
-                  <li key={clip.id}>
-                    <button
-                      type="button"
-                      className={`clipRow ${isRecorded ? "done" : ""} ${isNext ? "next" : ""} ${isRecording ? "recording" : ""}`}
-                      disabled={!isNext || busy}
-                      onClick={() => handleClipTap(clip, index)}
-                    >
-                      <span className="clipTime">{clip.time}</span>
-                      {isRecording && <Waveform />}
-                      {isRecorded && rec && (
-                        <span className="clipTranscript">{rec.transcript}</span>
-                      )}
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-
-            <div className="micRow">
-              <MicButton
-                recording={speech.listening}
-                disabled={busy || !nextClip}
-                onClick={() => (speech.listening ? speech.stop() : speech.start())}
-              />
-            </div>
-            {speech.error && <p className="micError">{speech.error}</p>}
-          </section>
-
-          <section className="panel">
+        <>
+          <div className="workBody">
             <div className="residentTabs">
               {residents.map((r) => (
                 <button
@@ -259,25 +248,57 @@ export function MemoApp() {
               })}
             </div>
 
+            <ul className="clipGrid">
+              {MEMO_CLIPS.map((clip, index) => {
+                const isRecorded = index < recorded.length;
+                const isNext = index === nextClipIndex;
+                const isRecording = recordingClipId === clip.id;
+                const rec = recorded[index];
+                const line = isRecorded
+                  ? rec.summaryByResident[activeResidentId] ?? rec.transcript
+                  : "";
+                return (
+                  <li key={clip.id}>
+                    <button
+                      type="button"
+                      className={`clipCell ${isRecorded ? "done" : ""} ${isNext ? "next" : ""} ${isRecording ? "recording" : ""}`}
+                      disabled={!isRecorded && (!isNext || busy)}
+                      onClick={() => handleClipTap(clip, index)}
+                    >
+                      <span className="clipTime">{clip.time}</span>
+                      {isRecording && <Waveform />}
+                      {isRecorded && <span className="clipSummary">{line}</span>}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+            {expandedClipId && recorded.find((c) => c.id === expandedClipId) && (
+              <p className="clipFull">
+                {recorded.find((c) => c.id === expandedClipId)?.transcript}
+              </p>
+            )}
+          </div>
+
+          <div className="dock">
+            <MicButton
+              recording={!!recordingClipId || speech.listening}
+              disabled={busy || (!nextClip && !speech.listening)}
+              onClick={handleDockRecord}
+            />
+            {speech.error && <p className="micError">{speech.error}</p>}
             {allClipsDone && (
               <button
                 type="button"
                 className="btnPrimary"
-                style={{ marginTop: 16 }}
                 disabled={!canSubmit}
                 onClick={handleSubmit}
               >
                 提出
               </button>
             )}
-          </section>
-        </div>
-      )}
-
-      {view === "work" && (
-        <div className="backLinkRow">
-          <Link href="/">記録</Link>
-        </div>
+          </div>
+        </>
       )}
     </div>
   );

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "記録",
+  title: "申し送り",
   description: "介護施設 申し送り・面談記録",
 };
 

@@ -49,6 +49,7 @@ a {
 
 .appShell {
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
 }
@@ -56,7 +57,10 @@ a {
 .appHeader {
   background: var(--header-bg);
   color: #fff;
-  padding: 16px 24px;
+  padding: 14px 20px 0;
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 .appHeaderTitle {
@@ -71,14 +75,14 @@ a {
 
 .appNav {
   display: flex;
-  gap: 20px;
+  gap: 24px;
 }
 
 .appNavLink {
   color: rgba(255, 255, 255, 0.5);
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
-  padding-bottom: 4px;
+  padding: 10px 0 12px;
   border-bottom: 2px solid transparent;
 }
 
@@ -154,6 +158,96 @@ a {
     border-right: none;
     border-bottom: 1px solid var(--border);
   }
+}
+
+.workBody {
+  flex: 1;
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 16px 16px 8px;
+  overflow-y: auto;
+}
+
+.clipGrid {
+  list-style: none;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  margin: 16px 0 8px;
+}
+
+.clipCell {
+  width: 100%;
+  min-height: 72px;
+  text-align: left;
+  padding: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.clipCell:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.clipCell.next:not(:disabled) {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-light);
+}
+
+.clipCell.recording {
+  border-color: var(--warn);
+  background: var(--warn-light);
+}
+
+.clipCell.done {
+  opacity: 1;
+}
+
+.clipSummary {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.clipFull {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  padding: 8px 4px 0;
+}
+
+.dock {
+  position: sticky;
+  bottom: 0;
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.dock .micBtn {
+  width: 100%;
+  justify-content: center;
+  padding: 14px;
+  font-size: 16px;
+  border-radius: 12px;
+}
+
+.dock .btnPrimary,
+.dock .btnSecondary {
+  margin-top: 0;
 }
 
 .clipList {
