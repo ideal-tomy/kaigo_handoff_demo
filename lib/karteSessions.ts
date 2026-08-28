@@ -3,10 +3,11 @@ import type { KarteResident } from "./types";
 export const KARTE_RESIDENTS: KarteResident[] = [
   {
     id: "tanaka",
-    name: "203 田中 春子",
+    name: "田中 春子",
+    room: "203",
     session: {
       id: "karte-pain",
-      residentName: "203 田中 春子",
+      residentName: "田中 春子",
       durationSec: 20,
       lines: [
         { speaker: "staff", text: "今日はどこかお辛いところはありますか。" },
@@ -29,10 +30,11 @@ export const KARTE_RESIDENTS: KarteResident[] = [
   },
   {
     id: "suzuki",
-    name: "208 鈴木 一郎",
+    name: "鈴木 一郎",
+    room: "208",
     session: {
       id: "karte-meal",
-      residentName: "208 鈴木 一郎",
+      residentName: "鈴木 一郎",
       durationSec: 16,
       lines: [
         { speaker: "staff", text: "昼食はいかがでしたか。" },

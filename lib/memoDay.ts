@@ -1,98 +1,16 @@
 import type { MemoClip, ResidentDraft } from "./types";
+import { UNIT, SHIFT_TO, todayLabel } from "./facility";
 
-export const MEMO_RESIDENTS: Omit<ResidentDraft, "handoff" | "progress">[] = [
-  { id: "tanaka", name: "203 田中 春子", priority: "normal" },
-  { id: "yamada", name: "105 山田 和子", priority: "normal" },
-  { id: "suzuki", name: "208 鈴木 一郎", priority: "normal" },
-  { id: "sato", name: "112 佐藤 良男", priority: "normal" },
+export { UNIT, SHIFT_TO, todayLabel };
+
+export const MEMO_RESIDENTS: Omit<ResidentDraft, "handoff" | "progress" | "notes">[] = [
+  { id: "tanaka", name: "田中 春子", room: "203", priority: "normal" },
+  { id: "yamada", name: "山田 和子", room: "105", priority: "normal" },
+  { id: "suzuki", name: "鈴木 一郎", room: "208", priority: "normal" },
+  { id: "sato", name: "佐藤 良男", room: "112", priority: "normal" },
 ];
 
-export const MEMO_CLIPS: MemoClip[] = [
-  {
-    id: "clip-1000",
-    time: "10:00",
-    durationSec: 14,
-    transcript:
-      "203田中さん、今朝36.8。食欲まあまあ。208鈴木さん、夜間トイレ2回って夜勤から。105山田さんは特に問題なさそう。112佐藤さん、起床後の血圧安定。",
-    summaryByResident: {
-      tanaka: "36.8℃",
-      yamada: "特記なし",
-      suzuki: "夜間トイレ2回",
-      sato: "血圧 安定",
-    },
-    updates: [
-      { residentId: "tanaka", doc: "progress", fieldKey: "vitals", value: "36.8℃", highlight: true },
-      { residentId: "tanaka", doc: "progress", fieldKey: "appetite", value: "まあまあ", highlight: true },
-      { residentId: "suzuki", doc: "progress", fieldKey: "sleep", value: "夜間トイレ 2回", highlight: true },
-      { residentId: "yamada", doc: "progress", fieldKey: "condition", value: "特記なし", highlight: true },
-      { residentId: "sato", doc: "progress", fieldKey: "vitals", value: "血圧 安定", highlight: true },
-    ],
-  },
-  {
-    id: "clip-1230",
-    time: "12:30",
-    durationSec: 16,
-    transcript:
-      "田中さん主食半分。水分少なめ。山田さんむせたけど大丈夫そう。鈴木さんは完食。佐藤さん、昼食後に少し眠そう。",
-    summaryByResident: {
-      tanaka: "主食 半分",
-      yamada: "むせあり",
-      suzuki: "完食",
-      sato: "眠気",
-    },
-    updates: [
-      { residentId: "tanaka", doc: "progress", fieldKey: "meal", value: "主食 半分", highlight: true },
-      { residentId: "tanaka", doc: "progress", fieldKey: "hydration", value: "少量", highlight: true },
-      { residentId: "yamada", doc: "progress", fieldKey: "meal", value: "むせあり（回復）", priority: "attention", highlight: true },
-      { residentId: "suzuki", doc: "progress", fieldKey: "meal", value: "完食", highlight: true },
-      { residentId: "sato", doc: "progress", fieldKey: "condition", value: "昼食後 眠気", highlight: true },
-    ],
-  },
-  {
-    id: "clip-1645",
-    time: "16:45",
-    durationSec: 18,
-    transcript:
-      "田中さん午後ちょっと熱っぽい、37.4。解熱剤はまだ出してない、ノート確認して。山田さんのむせは昼以降なし。鈴木さん変化なし。佐藤さんも特に変化なし。",
-    summaryByResident: {
-      tanaka: "37.4℃",
-      yamada: "むせなし",
-      suzuki: "変化なし",
-      sato: "変化なし",
-    },
-    updates: [
-      {
-        residentId: "tanaka",
-        doc: "progress",
-        fieldKey: "vitals",
-        value: "午後 37.4℃",
-        priority: "attention",
-        highlight: true,
-      },
-      {
-        residentId: "tanaka",
-        doc: "handoff",
-        fieldKey: "medication",
-        value: "解熱剤 投与済み",
-        needsReview: true,
-        correctValue: "解熱剤 未投与・記録要確認",
-        priority: "urgent",
-        highlight: true,
-      },
-      { residentId: "yamada", doc: "progress", fieldKey: "meal", value: "むせなし（午後）", highlight: true },
-      { residentId: "suzuki", doc: "progress", fieldKey: "condition", value: "変化なし", highlight: true },
-      { residentId: "sato", doc: "progress", fieldKey: "condition", value: "変化なし", highlight: true },
-    ],
-    setHandoffPriority: { residentId: "tanaka", priority: "urgent" },
-    setNextAction: {
-      residentId: "tanaka",
-      value: "解熱剤記録の確認。再発熱時は看護へ",
-      priority: "urgent",
-    },
-  },
-];
-
-const BASE_FIELDS: Record<string, { handoff: ResidentDraft["handoff"]; progress: ResidentDraft["progress"] }> = {
+const BASE: Record<string, { handoff: ResidentDraft["handoff"]; progress: ResidentDraft["progress"] }> = {
   tanaka: {
     handoff: [
       { key: "medication", label: "投薬", value: "" },
@@ -129,68 +47,191 @@ const BASE_FIELDS: Record<string, { handoff: ResidentDraft["handoff"]; progress:
   },
 };
 
+export const CLIPS_BY_RESIDENT: Record<string, MemoClip[]> = {
+  tanaka: [
+    {
+      id: "t-1000",
+      residentId: "tanaka",
+      time: "10:00",
+      durationSec: 8,
+      transcript: "田中さん、今朝36.8。食欲はまあまあ。",
+      summary: "36.8℃",
+      patches: [
+        { doc: "progress", fieldKey: "vitals", value: "朝 36.8℃" },
+        { doc: "progress", fieldKey: "appetite", value: "まあまあ" },
+      ],
+    },
+    {
+      id: "t-1230",
+      residentId: "tanaka",
+      time: "12:30",
+      durationSec: 8,
+      transcript: "田中さん、昼は主食半分。水分少なめ。",
+      summary: "主食 半分",
+      patches: [
+        { doc: "progress", fieldKey: "meal", value: "主食 半分" },
+        { doc: "progress", fieldKey: "hydration", value: "少量" },
+      ],
+    },
+    {
+      id: "t-1645",
+      residentId: "tanaka",
+      time: "16:45",
+      durationSec: 10,
+      transcript: "田中さん午後ちょっと熱っぽい、37.4。解熱剤はまだ出してない。ノート確認して。",
+      summary: "37.4℃",
+      setPriority: "urgent",
+      patches: [
+        { doc: "progress", fieldKey: "vitals", value: "朝 36.8℃ → 夕 37.4℃", priority: "attention" },
+        {
+          doc: "handoff",
+          fieldKey: "medication",
+          value: "解熱剤 投与済み",
+          needsReview: true,
+          correctValue: "解熱剤 未投与",
+          priority: "urgent",
+        },
+        {
+          doc: "handoff",
+          fieldKey: "nextAction",
+          value: "投薬記録を確認。再発熱時は看護へ",
+        },
+      ],
+    },
+  ],
+  yamada: [
+    {
+      id: "y-1000",
+      residentId: "yamada",
+      time: "10:00",
+      durationSec: 6,
+      transcript: "山田さん、今朝は特に問題なさそう。",
+      summary: "特記なし",
+      patches: [{ doc: "progress", fieldKey: "condition", value: "特記なし" }],
+    },
+    {
+      id: "y-1230",
+      residentId: "yamada",
+      time: "12:30",
+      durationSec: 7,
+      transcript: "山田さん、昼にむせたけど大丈夫そう。",
+      summary: "むせあり",
+      patches: [{ doc: "progress", fieldKey: "meal", value: "むせあり（回復）", priority: "attention" }],
+    },
+    {
+      id: "y-1645",
+      residentId: "yamada",
+      time: "16:45",
+      durationSec: 6,
+      transcript: "山田さん、むせは昼以降なし。",
+      summary: "むせなし",
+      patches: [
+        { doc: "progress", fieldKey: "meal", value: "むせなし（午後）" },
+        { doc: "handoff", fieldKey: "nextAction", value: "追加対応 不要" },
+      ],
+    },
+  ],
+  suzuki: [
+    {
+      id: "s-1000",
+      residentId: "suzuki",
+      time: "10:00",
+      durationSec: 6,
+      transcript: "鈴木さん、夜間トイレ2回って夜勤から。",
+      summary: "夜間トイレ2回",
+      patches: [{ doc: "progress", fieldKey: "sleep", value: "夜間トイレ 2回" }],
+    },
+    {
+      id: "s-1230",
+      residentId: "suzuki",
+      time: "12:30",
+      durationSec: 5,
+      transcript: "鈴木さん、昼は完食。",
+      summary: "完食",
+      patches: [{ doc: "progress", fieldKey: "meal", value: "完食" }],
+    },
+    {
+      id: "s-1645",
+      residentId: "suzuki",
+      time: "16:45",
+      durationSec: 5,
+      transcript: "鈴木さん、変化なし。",
+      summary: "変化なし",
+      patches: [
+        { doc: "progress", fieldKey: "condition", value: "変化なし" },
+        { doc: "handoff", fieldKey: "nextAction", value: "追加対応 不要" },
+      ],
+    },
+  ],
+  sato: [
+    {
+      id: "a-1000",
+      residentId: "sato",
+      time: "10:00",
+      durationSec: 6,
+      transcript: "佐藤さん、起床後の血圧は安定。",
+      summary: "血圧 安定",
+      patches: [{ doc: "progress", fieldKey: "vitals", value: "血圧 安定" }],
+    },
+    {
+      id: "a-1230",
+      residentId: "sato",
+      time: "12:30",
+      durationSec: 5,
+      transcript: "佐藤さん、昼のあと少し眠そう。",
+      summary: "眠気",
+      patches: [{ doc: "progress", fieldKey: "condition", value: "昼食後 眠気" }],
+    },
+    {
+      id: "a-1645",
+      residentId: "sato",
+      time: "16:45",
+      durationSec: 5,
+      transcript: "佐藤さん、特に変化なし。",
+      summary: "変化なし",
+      patches: [
+        { doc: "progress", fieldKey: "condition", value: "変化なし" },
+        { doc: "handoff", fieldKey: "nextAction", value: "追加対応 不要" },
+      ],
+    },
+  ],
+};
+
 export function createInitialResidents(): ResidentDraft[] {
   return MEMO_RESIDENTS.map((r) => ({
     ...r,
-    handoff: BASE_FIELDS[r.id].handoff.map((f) => ({ ...f })),
-    progress: BASE_FIELDS[r.id].progress.map((f) => ({ ...f })),
+    notes: "",
+    handoff: BASE[r.id].handoff.map((f) => ({ ...f })),
+    progress: BASE[r.id].progress.map((f) => ({ ...f })),
   }));
 }
 
-export function applyClip(residents: ResidentDraft[], clip: MemoClip): ResidentDraft[] {
-  const next = residents.map((r) => ({
-    ...r,
-    handoff: r.handoff.map((f) => ({ ...f })),
-    progress: r.progress.map((f) => ({ ...f })),
-  }));
+export function getClips(residentId: string): MemoClip[] {
+  return CLIPS_BY_RESIDENT[residentId] ?? [];
+}
 
-  for (const u of clip.updates) {
-    const resident = next.find((r) => r.id === u.residentId);
-    if (!resident) continue;
-    const fields = u.doc === "handoff" ? resident.handoff : resident.progress;
-    const idx = fields.findIndex((f) => f.key === u.fieldKey);
-    if (idx >= 0) {
-      fields[idx] = {
-        ...fields[idx],
-        value: u.value,
-        needsReview: u.needsReview,
-        correctValue: u.correctValue,
-        priority: u.priority,
-      };
-    } else {
-      fields.push({
-        key: u.fieldKey,
-        label: u.fieldKey,
-        value: u.value,
-        needsReview: u.needsReview,
-        correctValue: u.correctValue,
-        priority: u.priority,
-      });
-    }
+export function applyClip(resident: ResidentDraft, clip: MemoClip): ResidentDraft {
+  const next: ResidentDraft = {
+    ...resident,
+    notes: resident.notes,
+    handoff: resident.handoff.map((f) => ({ ...f })),
+    progress: resident.progress.map((f) => ({ ...f })),
+  };
+
+  for (const p of clip.patches) {
+    const fields = p.doc === "handoff" ? next.handoff : next.progress;
+    const idx = fields.findIndex((f) => f.key === p.fieldKey);
+    const patched = {
+      ...(idx >= 0 ? fields[idx] : { key: p.fieldKey, label: p.fieldKey, value: "" }),
+      value: p.value,
+      needsReview: p.needsReview,
+      correctValue: p.correctValue,
+      priority: p.priority,
+    };
+    if (idx >= 0) fields[idx] = patched;
+    else fields.push(patched);
   }
 
-  if (clip.setHandoffPriority) {
-    const r = next.find((x) => x.id === clip.setHandoffPriority!.residentId);
-    if (r) r.priority = clip.setHandoffPriority.priority;
-  }
-
-  if (clip.setNextAction) {
-    const r = next.find((x) => x.id === clip.setNextAction!.residentId);
-    if (r) {
-      const na = r.handoff.find((f) => f.key === "nextAction");
-      if (na) {
-        na.value = clip.setNextAction.value;
-        na.priority = clip.setNextAction.priority;
-      } else {
-        r.handoff.push({
-          key: "nextAction",
-          label: "次担当",
-          value: clip.setNextAction.value,
-          priority: clip.setNextAction.priority,
-        });
-      }
-    }
-  }
-
+  if (clip.setPriority) next.priority = clip.setPriority;
   return next;
 }

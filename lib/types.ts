@@ -14,41 +14,35 @@ export type TemplateField = {
 export type ResidentDraft = {
   id: string;
   name: string;
+  room: string;
   handoff: TemplateField[];
   progress: TemplateField[];
+  notes: string;
   priority: Priority;
+};
+
+export type FieldPatch = {
+  doc: DocumentTab;
+  fieldKey: string;
+  value: string;
+  needsReview?: boolean;
+  correctValue?: string;
+  priority?: Priority;
 };
 
 export type MemoClip = {
   id: string;
+  residentId: string;
   time: string;
   transcript: string;
-  summaryByResident: Record<string, string>;
+  summary: string;
   durationSec: number;
-  updates: Array<{
-    residentId: string;
-    doc: DocumentTab;
-    fieldKey: string;
-    value: string;
-    needsReview?: boolean;
-    correctValue?: string;
-    priority?: Priority;
-    highlight?: boolean;
-  }>;
-  setHandoffPriority?: { residentId: string; priority: Priority };
-  setNextAction?: { residentId: string; value: string; priority?: Priority };
+  patches: FieldPatch[];
+  setPriority?: Priority;
 };
 
 export type RecordedClip = MemoClip & {
   recordedAt: string;
-};
-
-export type InboxItem = {
-  id: string;
-  resident: string;
-  summary: string;
-  priority: Priority;
-  submittedAt: string;
 };
 
 export type ConversationLine = {
@@ -71,5 +65,6 @@ export type KarteSession = {
 export type KarteResident = {
   id: string;
   name: string;
+  room: string;
   session: KarteSession;
 };

@@ -2,115 +2,107 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AppNav } from "@/components/AppNav";
+import { ChartPaper } from "@/components/ChartPaper";
 import { MicButton, Waveform } from "@/components/MicButton";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
-import { fieldNeedsFix, residentCanSubmit } from "@/lib/fieldUtils";
+import { residentCanSubmit } from "@/lib/fieldUtils";
+import { todayLabel, nowTime } from "@/lib/facility";
 import {
-  MEMO_CLIPS,
   applyClip,
   createInitialResidents,
+  getClips,
 } from "@/lib/memoDay";
-import type {
-  DocumentTab,
-  InboxItem,
-  MemoClip,
-  RecordedClip,
-  ResidentDraft,
-} from "@/lib/types";
+import { addHandoffRecord } from "@/lib/recordsStore";
+import type { MemoClip, RecordedClip, ResidentDraft } from "@/lib/types";
+
+type RecordMap = Record<string, RecordedClip[]>;
 
 export function MemoApp() {
-  const [view, setView] = useState<"work" | "inbox">("work");
   const [residents, setResidents] = useState<ResidentDraft[]>(createInitialResidents);
-  const [recorded, setRecorded] = useState<RecordedClip[]>([]);
-  const [recordingClipId, setRecordingClipId] = useState<string | null>(null);
-  const [activeResidentId, setActiveResidentId] = useState("tanaka");
-  const [docTab, setDocTab] = useState<DocumentTab>("progress");
+  const [activeId, setActiveId] = useState("tanaka");
+  const [recordedMap, setRecordedMap] = useState<RecordMap>({});
+  const [recordingId, setRecordingId] = useState<string | null>(null);
+  const [spoken, setSpoken] = useState("");
   const [highlightKeys, setHighlightKeys] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
-  const [inbox, setInbox] = useState<InboxItem[]>([]);
-  const [expandedClipId, setExpandedClipId] = useState<string | null>(null);
+  const [submittedIds, setSubmittedIds] = useState<string[]>([]);
 
   const speech = useSpeechRecognition();
   const processedSpeechRef = useRef("");
 
-  const nextClipIndex = recorded.length;
-  const nextClip = MEMO_CLIPS[nextClipIndex] ?? null;
-  const allClipsDone = recorded.length >= MEMO_CLIPS.length;
-  const activeResident = residents.find((r) => r.id === activeResidentId) ?? residents[0];
-  const fields = docTab === "handoff" ? activeResident.handoff : activeResident.progress;
-  const canSubmit = allClipsDone && residentCanSubmit(activeResident);
+  const resident = residents.find((r) => r.id === activeId) ?? residents[0];
+  const clips = getClips(resident.id);
+  const recorded = recordedMap[resident.id] ?? [];
+  const nextIndex = recorded.length;
+  const nextClip = clips[nextIndex] ?? null;
+  const allDone = recorded.length >= clips.length;
+  const submitted = submittedIds.includes(resident.id);
+  const canSubmit = allDone && !submitted && residentCanSubmit(resident);
+  const dateLabel = todayLabel();
 
-  const runClip = useCallback((clip: MemoClip) => {
-    setBusy(true);
-    setRecordingClipId(clip.id);
-    setExpandedClipId(null);
+  const runClip = useCallback(
+    (clip: MemoClip) => {
+      setBusy(true);
+      setRecordingId(clip.id);
+      setSpoken("");
 
-    setTimeout(() => {
-      setResidents((prev) => applyClip(prev, clip));
+      let i = 0;
+      const typeTimer = setInterval(() => {
+        i += 1;
+        setSpoken(clip.transcript.slice(0, i));
+        if (i >= clip.transcript.length) clearInterval(typeTimer);
+      }, 28);
 
-      const keys = new Set<string>();
-      clip.updates.forEach((u) => {
-        if (u.highlight) keys.add(`${u.residentId}:${u.doc}:${u.fieldKey}`);
-      });
-      setHighlightKeys(keys);
-      setTimeout(() => setHighlightKeys(new Set()), 1800);
+      setTimeout(() => {
+        clearInterval(typeTimer);
+        setSpoken(clip.transcript);
+        setResidents((prev) =>
+          prev.map((r) => (r.id === clip.residentId ? applyClip(r, clip) : r))
+        );
 
-      setRecorded((prev) => [
-        ...prev,
-        {
-          ...clip,
-          recordedAt: new Date().toLocaleTimeString("ja-JP", {
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
-        },
-      ]);
-      setRecordingClipId(null);
-      setBusy(false);
+        const keys = new Set(clip.patches.map((p) => `${p.doc}:${p.fieldKey}`));
+        setHighlightKeys(keys);
+        setTimeout(() => setHighlightKeys(new Set()), 1600);
 
-      const reviewOnHandoff = clip.updates.some(
-        (u) => u.residentId === activeResidentId && u.doc === "handoff" && u.needsReview
-      );
-      if (reviewOnHandoff) setDocTab("handoff");
-    }, clip.durationSec * 70 + 500);
-  }, [activeResidentId]);
+        setRecordedMap((prev) => ({
+          ...prev,
+          [clip.residentId]: [...(prev[clip.residentId] ?? []), { ...clip, recordedAt: clip.time }],
+        }));
+        setRecordingId(null);
+        setBusy(false);
+      }, Math.max(clip.transcript.length * 28 + 200, clip.durationSec * 80 + 400));
+    },
+    []
+  );
 
-  const handleClipTap = (clip: MemoClip, index: number) => {
-    const isRecorded = index < recorded.length;
-    if (isRecorded) {
-      setExpandedClipId((id) => (id === clip.id ? null : clip.id));
-      return;
-    }
-    if (busy || index !== nextClipIndex) return;
-    runClip(clip);
+  const handleSlot = (clip: MemoClip, index: number) => {
+    if (submitted || busy) return;
+    if (index === nextIndex) runClip(clip);
   };
 
-  const handleDockRecord = () => {
+  const handleRecord = () => {
     if (speech.listening) {
       speech.stop();
       return;
     }
-    if (nextClip && !busy) {
-      runClip(nextClip);
-    }
+    if (nextClip && !busy && !submitted) runClip(nextClip);
   };
 
   useEffect(() => {
     const text = speech.transcript.trim();
-    if (!text || speech.listening || busy || !nextClip) return;
+    if (!text || speech.listening || busy || !nextClip || submitted) return;
     if (processedSpeechRef.current === text) return;
     processedSpeechRef.current = text;
     runClip({ ...nextClip, transcript: text });
-  }, [speech.listening, speech.transcript, busy, nextClip, runClip]);
+  }, [speech.listening, speech.transcript, busy, nextClip, runClip, submitted]);
 
-  const updateField = (key: string, value: string) => {
+  const onEdit = (doc: "handoff" | "progress", key: string, value: string) => {
     setResidents((prev) =>
       prev.map((r) => {
-        if (r.id !== activeResidentId) return r;
-        const target = docTab === "handoff" ? "handoff" : "progress";
+        if (r.id !== activeId) return r;
         return {
           ...r,
-          [target]: r[target].map((f) =>
+          [doc]: r[doc].map((f) =>
             f.key === key ? { ...f, value, needsReview: false } : f
           ),
         };
@@ -118,34 +110,45 @@ export function MemoApp() {
     );
   };
 
-  const handleSubmit = () => {
-    const nextAction =
-      activeResident.handoff.find((f) => f.key === "nextAction")?.value ||
-      activeResident.progress.find((f) => f.value)?.value ||
-      "";
-    setInbox((prev) => [
-      {
-        id: `inbox-${Date.now()}`,
-        resident: activeResident.name,
-        summary: nextAction,
-        priority: activeResident.priority,
-        submittedAt: new Date().toLocaleTimeString("ja-JP", {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-      },
-      ...prev,
-    ]);
-    setView("inbox");
+  const onConfirm = (doc: "handoff" | "progress", key: string) => {
+    setResidents((prev) =>
+      prev.map((r) => {
+        if (r.id !== activeId) return r;
+        const next = {
+          ...r,
+          [doc]: r[doc].map((f) => {
+            if (f.key !== key) return f;
+            return {
+              ...f,
+              value: f.correctValue ?? f.value,
+              needsReview: false,
+              priority: undefined,
+            };
+          }),
+        };
+        const still = [...next.handoff, ...next.progress].some((f) => f.needsReview);
+        return { ...next, priority: still ? next.priority : "normal" };
+      })
+    );
   };
 
-  const reset = () => {
+  const onNotes = (value: string) => {
+    setResidents((prev) => prev.map((r) => (r.id === activeId ? { ...r, notes: value } : r)));
+  };
+
+  const handleSubmit = () => {
+    if (!canSubmit) return;
+    addHandoffRecord(resident, dateLabel, nowTime());
+    setSubmittedIds((prev) => [...prev, resident.id]);
+    setSpoken("");
+  };
+
+  const resetAll = () => {
     setResidents(createInitialResidents());
-    setRecorded([]);
-    setActiveResidentId("tanaka");
-    setDocTab("progress");
-    setView("work");
-    setExpandedClipId(null);
+    setRecordedMap({});
+    setSpoken("");
+    setSubmittedIds([]);
+    setActiveId("tanaka");
     processedSpeechRef.current = "";
     speech.reset();
   };
@@ -154,152 +157,98 @@ export function MemoApp() {
     <div className="appShell">
       <AppNav />
 
-      {view === "inbox" ? (
-        <div className="inboxPanel">
-          <h2 className="inboxTitle">受信</h2>
-          <div className="inboxList">
-            {inbox.map((item) => (
-              <div
-                key={item.id}
-                className={`inboxItem ${item.priority === "urgent" ? "urgent" : ""}`}
-              >
-                <div className="inboxItemHeader">
-                  <div>
-                    <div className="inboxResident">{item.resident}</div>
-                    <div className="inboxSummary">{item.summary}</div>
-                  </div>
-                  <div className="inboxTime">{item.submittedAt}</div>
-                </div>
-                {item.priority === "urgent" && (
-                  <span className="priorityBadge urgent">要対応</span>
-                )}
-              </div>
-            ))}
-          </div>
-          <button type="button" className="btnSecondary" onClick={() => setView("work")}>
-            戻る
-          </button>
-          <button type="button" className="btnSecondary" onClick={reset}>
-            はじめから
-          </button>
+      <div className="workBody">
+        <div className="nameRow">
+          {residents.map((r) => (
+            <button
+              key={r.id}
+              type="button"
+              className={`nameChip ${activeId === r.id ? "active" : ""} ${r.priority === "urgent" ? "urgent" : ""} ${submittedIds.includes(r.id) ? "done" : ""}`}
+              onClick={() => {
+                setActiveId(r.id);
+                const last = (recordedMap[r.id] ?? []).at(-1);
+                setSpoken(last?.transcript ?? "");
+              }}
+            >
+              {r.room} {r.name.split(" ")[0]}
+            </button>
+          ))}
         </div>
-      ) : (
-        <>
-          <div className="workBody">
-            <div className="residentTabs">
-              {residents.map((r) => (
-                <button
-                  key={r.id}
-                  type="button"
-                  className={`residentTab ${activeResidentId === r.id ? "active" : ""} ${r.priority === "urgent" ? "urgent" : ""}`}
-                  onClick={() => setActiveResidentId(r.id)}
-                >
-                  {r.name.split(" ").slice(0, 2).join(" ")}
-                </button>
-              ))}
-            </div>
 
-            <div className="docTabs">
-              <button
-                type="button"
-                className={`docTab ${docTab === "handoff" ? "active" : ""}`}
-                onClick={() => setDocTab("handoff")}
-              >
-                申し送り票
-              </button>
-              <button
-                type="button"
-                className={`docTab ${docTab === "progress" ? "active" : ""}`}
-                onClick={() => setDocTab("progress")}
-              >
-                経過記録
-              </button>
-            </div>
+        {spoken ? (
+          <blockquote className="spoken">
+            {recordingId ? <Waveform /> : null}
+            <p>{spoken}</p>
+          </blockquote>
+        ) : null}
 
-            <div className="templateFields">
-              {fields.map((field) => {
-                const hk = `${activeResidentId}:${docTab}:${field.key}`;
-                const highlighted = highlightKeys.has(hk);
-                const needsFix = fieldNeedsFix(field);
-                const hasValue = field.value.length > 0;
-                return (
-                  <div
-                    key={field.key}
-                    className={`templateField visible ${needsFix ? "review" : ""} ${field.priority === "urgent" ? "urgent" : ""} ${highlighted ? "flash" : ""} ${!hasValue ? "empty" : ""}`}
+        <ChartPaper
+          resident={resident}
+          dateLabel={dateLabel}
+          submitted={submitted}
+          allowEdit={allDone && !submitted}
+          highlightKeys={highlightKeys}
+          onEdit={onEdit}
+          onConfirm={onConfirm}
+          onNotes={onNotes}
+        />
+
+        {!submitted && (
+          <ul className="clipGrid">
+            {clips.map((clip, index) => {
+              const isRec = index < recorded.length;
+              const isNext = index === nextIndex;
+              const isOn = recordingId === clip.id;
+              return (
+                <li key={clip.id}>
+                  <button
+                    type="button"
+                    className={`clipCell ${isRec ? "done" : ""} ${isNext ? "next" : ""} ${isOn ? "recording" : ""}`}
+                    disabled={!isRec && (!isNext || busy)}
+                    onClick={() => handleSlot(clip, index)}
                   >
-                    <div className="fieldLabel">
-                      {field.label}
-                      {field.priority === "urgent" && (
-                        <span className="priorityBadge urgent">要対応</span>
-                      )}
-                    </div>
-                    {allClipsDone ? (
-                      <input
-                        className="fieldInput"
-                        value={field.value}
-                        onChange={(e) => updateField(field.key, e.target.value)}
-                        aria-label={field.label}
-                      />
-                    ) : (
-                      <div className="fieldValue">{field.value || "—"}</div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+                    <span className="clipTime">{clip.time}</span>
+                    {isOn && <Waveform />}
+                    {isRec && <span className="clipSummary">{clip.summary}</span>}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
 
-            <ul className="clipGrid">
-              {MEMO_CLIPS.map((clip, index) => {
-                const isRecorded = index < recorded.length;
-                const isNext = index === nextClipIndex;
-                const isRecording = recordingClipId === clip.id;
-                const rec = recorded[index];
-                const line = isRecorded
-                  ? rec.summaryByResident[activeResidentId] ?? rec.transcript
-                  : "";
-                return (
-                  <li key={clip.id}>
-                    <button
-                      type="button"
-                      className={`clipCell ${isRecorded ? "done" : ""} ${isNext ? "next" : ""} ${isRecording ? "recording" : ""}`}
-                      disabled={!isRecorded && (!isNext || busy)}
-                      onClick={() => handleClipTap(clip, index)}
-                    >
-                      <span className="clipTime">{clip.time}</span>
-                      {isRecording && <Waveform />}
-                      {isRecorded && <span className="clipSummary">{line}</span>}
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-            {expandedClipId && recorded.find((c) => c.id === expandedClipId) && (
-              <p className="clipFull">
-                {recorded.find((c) => c.id === expandedClipId)?.transcript}
-              </p>
-            )}
-          </div>
-
-          <div className="dock">
-            <MicButton
-              recording={!!recordingClipId || speech.listening}
-              disabled={busy || (!nextClip && !speech.listening)}
-              onClick={handleDockRecord}
-            />
-            {speech.error && <p className="micError">{speech.error}</p>}
-            {allClipsDone && (
-              <button
-                type="button"
-                className="btnPrimary"
-                disabled={!canSubmit}
-                onClick={handleSubmit}
-              >
-                提出
-              </button>
-            )}
-          </div>
-        </>
-      )}
+      <div className="dock">
+        {speech.error && <p className="micError">{speech.error}</p>}
+        {!submitted && (
+          <MicButton
+            recording={!!recordingId || speech.listening}
+            disabled={busy || (!nextClip && !speech.listening)}
+            onClick={handleRecord}
+          />
+        )}
+        {allDone && !submitted && (
+          <button type="button" className="btnPrimary" disabled={!canSubmit} onClick={handleSubmit}>
+            提出
+          </button>
+        )}
+        {allDone && !submitted && !canSubmit && (
+          <p className="dockHint">要対応の「確認」を押すと提出できます</p>
+        )}
+        {submitted && (
+          <>
+            <a href="/records" className="btnPrimary dockLink">
+              記録
+            </a>
+            <button type="button" className="btnSecondary" onClick={() => setSubmittedIds((ids) => ids.filter((id) => id !== resident.id))}>
+              戻る
+            </button>
+            <button type="button" className="btnSecondary" onClick={resetAll}>
+              はじめから
+            </button>
+          </>
+        )}
+      </div>
     </div>
   );
 }

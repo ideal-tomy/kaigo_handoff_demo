@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 const LINKS = [
   { href: "/", label: "申し送り" },
   { href: "/karte", label: "面談記録" },
+  { href: "/records", label: "記録" },
 ] as const;
 
 export function AppNav({ title }: { title?: string }) {
