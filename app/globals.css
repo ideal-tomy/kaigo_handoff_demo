@@ -8,7 +8,6 @@
   --text-secondary: #6b6560;
   --accent: #2e7d6b;
   --accent-light: #e8f5f1;
-  --accent-glow: rgba(46, 125, 107, 0.15);
   --warn: #c84b31;
   --warn-light: #fdf0ed;
   --attention: #b8860b;
@@ -43,6 +42,11 @@ textarea {
   font-family: inherit;
 }
 
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
 .appShell {
   min-height: 100vh;
   display: flex;
@@ -52,59 +56,72 @@ textarea {
 .appHeader {
   background: var(--header-bg);
   color: #fff;
-  padding: 20px 24px;
-}
-
-.appHeaderLabel {
-  font-size: 10px;
-  letter-spacing: 0.15em;
-  color: var(--accent);
-  font-weight: 700;
-  text-transform: uppercase;
-  margin-bottom: 4px;
+  padding: 16px 24px;
 }
 
 .appHeaderTitle {
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 500;
-  letter-spacing: -0.01em;
+  margin-bottom: 12px;
 }
 
-.appHeaderSub {
+.hubTitle {
+  margin-bottom: 0;
+}
+
+.appNav {
+  display: flex;
+  gap: 20px;
+}
+
+.appNavLink {
   color: rgba(255, 255, 255, 0.5);
-  font-size: 12px;
-  margin-top: 6px;
-}
-
-.contextBar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 16px;
-  padding: 12px 24px;
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
-  font-size: 12px;
-  color: var(--text-secondary);
-}
-
-.contextBar strong {
-  color: var(--text-primary);
+  font-size: 14px;
   font-weight: 600;
+  padding-bottom: 4px;
+  border-bottom: 2px solid transparent;
 }
 
-.beforeAfter {
-  padding: 10px 24px;
-  background: var(--accent-light);
-  border-bottom: 1px solid rgba(46, 125, 107, 0.2);
-  font-size: 12px;
-  color: var(--accent);
-  display: flex;
+.appNavLink.active {
+  color: #fff;
+  border-bottom-color: var(--accent);
+}
+
+.hubGrid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 16px;
-  flex-wrap: wrap;
+  max-width: 640px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 48px 24px;
+  align-content: start;
 }
 
-.beforeAfter span {
-  font-weight: 700;
+@media (max-width: 520px) {
+  .hubGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.hubTile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.hubTile:hover {
+  border-color: var(--accent);
+  box-shadow: 0 4px 16px rgba(46, 125, 107, 0.12);
 }
 
 .mainGrid {
@@ -139,165 +156,64 @@ textarea {
   }
 }
 
-.panelTitle {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--text-secondary);
-  margin-bottom: 16px;
-}
-
-.stepper {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  margin-bottom: 20px;
-  flex-wrap: wrap;
-}
-
-.stepItem {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 11px;
-}
-
-.stepNum {
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 10px;
-  font-weight: 700;
-  background: var(--border);
-  color: var(--text-secondary);
-}
-
-.stepNum.active {
-  background: var(--accent);
-  color: #fff;
-  box-shadow: 0 0 0 3px var(--accent-glow);
-}
-
-.stepNum.done {
-  background: var(--accent-light);
-  color: var(--accent);
-}
-
-.stepConnector {
-  width: 16px;
-  height: 1px;
-  background: var(--border);
-}
-
-.stepConnector.done {
-  background: var(--accent);
-}
-
-.sampleLauncher {
-  background: var(--accent-light);
-  border: 1px solid rgba(46, 125, 107, 0.25);
-  border-radius: var(--radius);
-  padding: 16px;
-  margin-bottom: 16px;
-}
-
-.sampleLauncherHeader {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin-bottom: 12px;
-}
-
-.sampleLauncherHeader strong {
-  font-size: 14px;
-  color: var(--accent);
-}
-
-.sampleLauncherHeader span {
-  font-size: 11px;
-  color: var(--text-secondary);
-}
-
-.sampleButtons {
+.clipList {
+  list-style: none;
   display: flex;
   flex-direction: column;
   gap: 8px;
+  margin-bottom: 20px;
 }
 
-.sampleBtn {
+.clipRow {
+  width: 100%;
   text-align: left;
-  padding: 12px 14px;
+  padding: 14px 16px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 8px;
   cursor: pointer;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: border-color 0.2s, opacity 0.2s;
 }
 
-.sampleBtn:hover:not(:disabled) {
-  border-color: var(--accent);
-  box-shadow: 0 2px 8px rgba(46, 125, 107, 0.12);
-}
-
-.sampleBtn:disabled {
-  opacity: 0.5;
+.clipRow:disabled {
+  opacity: 0.35;
   cursor: not-allowed;
 }
 
-.sampleBtnTitle {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-primary);
+.clipRow.next:not(:disabled) {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-light);
 }
 
-.sampleBtnDesc {
-  font-size: 11px;
+.clipRow.recording {
+  border-color: var(--warn);
+  background: var(--warn-light);
+}
+
+.clipRow.done {
+  opacity: 1;
+  cursor: default;
+}
+
+.clipTime {
+  font-size: 16px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.clipTranscript {
+  font-size: 13px;
   color: var(--text-secondary);
-  margin-top: 2px;
+  line-height: 1.7;
 }
 
-.inputDivider {
+.micRow {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin: 16px 0;
-  font-size: 11px;
-  color: var(--text-secondary);
-}
-
-.inputDivider::before,
-.inputDivider::after {
-  content: "";
-  flex: 1;
-  height: 1px;
-  background: var(--border);
-}
-
-.liveInputSection {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.textArea {
-  width: 100%;
-  min-height: 80px;
-  padding: 12px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  font-size: 14px;
-  resize: vertical;
-  background: var(--surface);
-}
-
-.micControls {
-  display: flex;
-  gap: 8px;
-  align-items: center;
 }
 
 .micBtn {
@@ -312,7 +228,6 @@ textarea {
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s;
 }
 
 .micBtn:hover:not(:disabled) {
@@ -324,7 +239,7 @@ textarea {
 }
 
 .micBtn:disabled {
-  opacity: 0.5;
+  opacity: 0.4;
   cursor: not-allowed;
 }
 
@@ -334,17 +249,10 @@ textarea {
   fill: currentColor;
 }
 
-.micHint {
-  font-size: 11px;
-  color: var(--text-secondary);
-}
-
 .micError {
   font-size: 12px;
   color: var(--warn);
-  padding: 8px 12px;
-  background: var(--warn-light);
-  border-radius: 8px;
+  margin-top: 8px;
 }
 
 .waveform {
@@ -381,59 +289,32 @@ textarea {
 .waveBar:nth-child(5) { animation-delay: 0.15s; }
 .waveBar:nth-child(6) { animation-delay: 0.3s; }
 
-.btnPrimary {
-  width: 100%;
-  padding: 12px;
-  background: var(--accent);
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: background 0.2s;
+.residentTabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 16px;
 }
 
-.btnPrimary:hover:not(:disabled) {
-  background: #256657;
-}
-
-.btnPrimary:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.btnSecondary {
-  width: 100%;
-  padding: 10px;
-  background: transparent;
-  color: var(--text-secondary);
+.residentTab {
+  padding: 8px 12px;
   border: 1px solid var(--border);
   border-radius: 8px;
-  font-size: 13px;
+  background: var(--surface);
+  font-size: 12px;
+  font-weight: 600;
   cursor: pointer;
-  margin-top: 8px;
+  color: var(--text-secondary);
 }
 
-.btnSecondary:hover:not(:disabled) {
+.residentTab.active {
   border-color: var(--accent);
   color: var(--accent);
+  background: var(--accent-light);
 }
 
-.transcriptBox {
-  background: #f9f7f3;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 16px;
-  font-size: 14px;
-  line-height: 1.85;
-  min-height: 100px;
-  color: var(--text-primary);
-}
-
-.transcriptEmpty {
-  color: var(--text-secondary);
-  font-size: 13px;
+.residentTab.urgent {
+  border-color: var(--warn);
 }
 
 .docTabs {
@@ -471,14 +352,14 @@ textarea {
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 12px 14px;
-  opacity: 0;
-  transform: translateY(6px);
-  transition: opacity 0.35s ease, transform 0.35s ease;
 }
 
 .templateField.visible {
   opacity: 1;
-  transform: translateY(0);
+}
+
+.templateField.empty {
+  opacity: 0.45;
 }
 
 .templateField.review {
@@ -489,6 +370,21 @@ textarea {
 .templateField.urgent {
   background: var(--warn-light);
   border-color: rgba(200, 75, 49, 0.25);
+}
+
+.templateField.flash {
+  animation: flashField 1.2s ease;
+}
+
+@keyframes flashField {
+  0%,
+  100% {
+    background: #f9f7f3;
+  }
+  30% {
+    background: var(--accent-light);
+    border-color: var(--accent);
+  }
 }
 
 .fieldLabel {
@@ -515,25 +411,19 @@ textarea {
   color: #fff;
 }
 
-.priorityBadge.attention {
-  background: var(--attention);
-  color: #fff;
-}
-
 .fieldInput {
   width: 100%;
-  border: 1px solid transparent;
+  border: none;
   background: transparent;
   font-size: 14px;
   color: var(--text-primary);
   padding: 4px 0;
   outline: none;
+  border-bottom: 1px solid transparent;
 }
 
 .fieldInput:focus {
   border-bottom-color: var(--accent);
-  border-bottom-width: 1px;
-  border-bottom-style: solid;
 }
 
 .fieldValue {
@@ -541,35 +431,46 @@ textarea {
   color: var(--text-primary);
 }
 
-.statusBar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 16px;
-  flex-wrap: wrap;
-}
-
-.statusChip {
-  font-size: 11px;
+.btnPrimary {
+  width: 100%;
+  padding: 12px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
   font-weight: 700;
-  padding: 4px 10px;
-  border-radius: 20px;
-  background: var(--border);
-  color: var(--text-secondary);
+  cursor: pointer;
 }
 
-.statusChip.active {
-  background: var(--accent-light);
+.btnPrimary:hover:not(:disabled) {
+  background: #256657;
+}
+
+.btnPrimary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btnSecondary {
+  width: 100%;
+  padding: 10px;
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+  margin-top: 8px;
+}
+
+.btnSecondary:hover {
+  border-color: var(--accent);
   color: var(--accent);
 }
 
-.statusChip.submitted {
-  background: var(--accent);
-  color: #fff;
-}
-
 .inboxPanel {
-  max-width: 1200px;
+  max-width: 640px;
   width: 100%;
   margin: 0 auto;
   padding: 24px;
@@ -578,12 +479,6 @@ textarea {
 .inboxTitle {
   font-size: 18px;
   font-weight: 600;
-  margin-bottom: 8px;
-}
-
-.inboxSub {
-  font-size: 13px;
-  color: var(--text-secondary);
   margin-bottom: 20px;
 }
 
@@ -591,6 +486,7 @@ textarea {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  margin-bottom: 16px;
 }
 
 .inboxItem {
@@ -598,9 +494,6 @@ textarea {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
 }
 
 .inboxItem.urgent {
@@ -608,14 +501,9 @@ textarea {
   background: var(--warn-light);
 }
 
-.inboxItem.attention {
-  border-left: 4px solid var(--attention);
-}
-
 .inboxItemHeader {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
   gap: 12px;
 }
 
@@ -627,6 +515,7 @@ textarea {
 .inboxSummary {
   font-size: 13px;
   color: var(--text-secondary);
+  margin-top: 4px;
 }
 
 .inboxTime {
@@ -635,27 +524,68 @@ textarea {
   white-space: nowrap;
 }
 
-.appFooter {
-  border-top: 1px solid var(--border);
-  padding: 12px 24px;
+.consentRow {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  font-size: 10px;
-  color: var(--text-secondary);
-  letter-spacing: 0.08em;
-  background: var(--surface);
-}
-
-.footerDot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--accent);
-}
-
-.loadingText {
+  gap: 8px;
   font-size: 13px;
+  margin-bottom: 16px;
+  cursor: pointer;
+}
+
+.conversationLog {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.convLine {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.convLine.resident .convSpeaker {
   color: var(--accent);
-  margin-top: 8px;
+}
+
+.convLine.staff .convSpeaker {
+  color: var(--text-secondary);
+}
+
+.convSpeaker {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.convText {
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.quoteBlock {
+  margin-bottom: 16px;
+}
+
+.quoteText {
+  margin: 8px 0 0;
+  padding: 12px 16px;
+  border-left: 3px solid var(--accent);
+  background: var(--accent-light);
+  font-size: 14px;
+  line-height: 1.7;
+  font-style: normal;
+}
+
+.backLinkRow {
+  padding: 12px 24px 24px;
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.backLinkRow a {
+  font-size: 13px;
 }

@@ -1,5 +1,5 @@
-import { HandoffDemo } from "@/components/HandoffDemo";
+import { HubView } from "@/components/HubView";
 
 export default function HomePage() {
-  return <HandoffDemo />;
+  return <HubView />;
 }

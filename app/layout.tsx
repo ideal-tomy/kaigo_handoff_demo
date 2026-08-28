@@ -2,9 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "申し送りAI デモ",
-  description:
-    "音声メモから申し送り票・経過記録のテンプレ下書きを作成し、確認して提出する介護施設向けデモ",
+  title: "記録",
+  description: "介護施設 申し送り・面談記録",
 };
 
 export default function RootLayout({

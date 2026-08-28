@@ -1,10 +1,4 @@
-export type ScenarioId = "fever" | "fall" | "normal";
-
 export type DocumentTab = "handoff" | "progress";
-
-export type DraftStatus = "idle" | "recording" | "transcribing" | "drafting" | "review" | "submitted";
-
-export type InputMode = "sample" | "mic" | "text";
 
 export type Priority = "normal" | "attention" | "urgent";
 
@@ -13,58 +7,68 @@ export type TemplateField = {
   label: string;
   value: string;
   needsReview?: boolean;
-  /** 意図的誤抽出: 正しい値 */
   correctValue?: string;
   priority?: Priority;
 };
 
-export type HandoffDraft = {
-  resident: string;
-  unit: string;
-  shiftFrom: string;
-  shiftTo: string;
-  fields: TemplateField[];
+export type ResidentDraft = {
+  id: string;
+  name: string;
+  handoff: TemplateField[];
+  progress: TemplateField[];
   priority: Priority;
-  submittedAt?: string;
 };
 
-export type ProgressNote = {
-  resident: string;
-  date: string;
-  fields: TemplateField[];
-};
-
-export type ScenarioSample = {
-  id: ScenarioId;
-  label: string;
-  description: string;
-  audioDurationSec: number;
+export type MemoClip = {
+  id: string;
+  time: string;
   transcript: string;
-  handoff: Omit<HandoffDraft, "submittedAt">;
-  progress: ProgressNote;
+  durationSec: number;
+  updates: Array<{
+    residentId: string;
+    doc: DocumentTab;
+    fieldKey: string;
+    value: string;
+    needsReview?: boolean;
+    correctValue?: string;
+    priority?: Priority;
+    highlight?: boolean;
+  }>;
+  setHandoffPriority?: { residentId: string; priority: Priority };
+  setNextAction?: { residentId: string; value: string; priority?: Priority };
+};
+
+export type RecordedClip = MemoClip & {
+  recordedAt: string;
 };
 
 export type InboxItem = {
   id: string;
-  scenarioId: ScenarioId;
   resident: string;
   summary: string;
   priority: Priority;
   submittedAt: string;
-  handoff: HandoffDraft;
-  progress: ProgressNote;
 };
 
-export type DemoContext = {
-  unit: string;
-  shiftFrom: string;
-  shiftTo: string;
-  recorder: string;
+export type ConversationLine = {
+  speaker: "staff" | "resident";
+  text: string;
 };
 
-export const DEMO_CONTEXT: DemoContext = {
-  unit: "2F さくら",
-  shiftFrom: "夜勤 22:00–07:00",
-  shiftTo: "日勤へ",
-  recorder: "夜勤 佐藤",
+export type KarteSession = {
+  id: string;
+  residentName: string;
+  lines: ConversationLine[];
+  durationSec: number;
+  progress: {
+    quote: string;
+    assessment: string;
+    fields: TemplateField[];
+  };
+};
+
+export type KarteResident = {
+  id: string;
+  name: string;
+  session: KarteSession;
 };

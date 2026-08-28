@@ -45,7 +45,7 @@ export function useSpeechRecognition() {
   const start = useCallback(() => {
     const Ctor = window.SpeechRecognition ?? window.webkitSpeechRecognition;
     if (!Ctor) {
-      setError("このブラウザでは音声認識に対応していません。サンプルをご利用ください。");
+      setError("マイクが使えません");
       return;
     }
 
@@ -67,9 +67,9 @@ export function useSpeechRecognition() {
 
     recognition.onerror = (event: SpeechErrorEvent) => {
       if (event.error === "not-allowed") {
-        setError("マイクの使用が許可されていません。サンプルをご利用ください。");
+        setError("マイクが使えません");
       } else if (event.error !== "aborted") {
-        setError("音声認識に失敗しました。サンプルをご利用ください。");
+        setError("マイクが使えません");
       }
       setListening(false);
     };
