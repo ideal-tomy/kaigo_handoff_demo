@@ -4,7 +4,8 @@
 
 - Demo ID: `kaigo-handoff`
 - Demo Name: 介護施設 申し送りAI
-- Repository: `kaigo_handoff_demo`（本番 URL 未定）
+- Repository: `kaigo_handoff_demo`（https://github.com/ideal-tomy/kaigo_handoff_demo）
+- Production URL: 未定
 - Demo Type: Workflow / Audio
 - Requirement File: `docs/kaigo_handoff_requirements.md`
 - Legacy Mock: `候補/index.html`, `Care Facility System/申し送りAI_demo.html`
