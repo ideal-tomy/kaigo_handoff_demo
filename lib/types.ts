@@ -9,6 +9,7 @@ export type TemplateField = {
   needsReview?: boolean;
   correctValue?: string;
   priority?: Priority;
+  sourceLine?: number;
 };
 
 export type ResidentDraft = {

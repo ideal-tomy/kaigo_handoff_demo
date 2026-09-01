@@ -1,30 +1,33 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AppNav } from "@/components/AppNav";
 import { BottomSheet } from "@/components/BottomSheet";
 import { ChartPaper } from "@/components/ChartPaper";
 import { MicButton, Waveform } from "@/components/MicButton";
 import { Spinner } from "@/components/Spinner";
+import { StaffShell } from "@/components/StaffShell";
 import { SummaryCard } from "@/components/SummaryCard";
+import { useDemoDate } from "@/hooks/useDemoDate";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import {
   countReviewFields,
   getFirstReviewField,
   residentCanSubmit,
 } from "@/lib/fieldUtils";
-import { todayLabel, nowTime } from "@/lib/facility";
+import { nowTime } from "@/lib/facility";
 import {
   applyClip,
+  combinedTranscript,
   createInitialResidents,
   getClips,
-  getFieldLabel,
 } from "@/lib/memoDay";
 import { addHandoffRecord } from "@/lib/recordsStore";
+import { printSheet } from "@/lib/print";
 import type { MemoClip, RecordedClip, ResidentDraft } from "@/lib/types";
 
 type RecordMap = Record<string, RecordedClip[]>;
 type DockMode = "record" | "busy" | "confirm" | "submit" | "records";
+type InputMode = "recording" | "typing" | null;
 
 export function MemoApp() {
   const [residents, setResidents] = useState<ResidentDraft[]>(createInitialResidents);
@@ -32,12 +35,12 @@ export function MemoApp() {
   const [recordedMap, setRecordedMap] = useState<RecordMap>({});
   const [recordingId, setRecordingId] = useState<string | null>(null);
   const [spoken, setSpoken] = useState("");
-  const [writingLabel, setWritingLabel] = useState("");
   const [highlightKeys, setHighlightKeys] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
   const [submittedIds, setSubmittedIds] = useState<string[]>([]);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [viewFade, setViewFade] = useState(false);
+  const [inputMode, setInputMode] = useState<InputMode>(null);
 
   const speech = useSpeechRecognition();
   const processedSpeechRef = useRef("");
@@ -52,8 +55,8 @@ export function MemoApp() {
   const canSubmit = allDone && !submitted && residentCanSubmit(resident);
   const reviewCount = countReviewFields(resident);
   const firstReview = getFirstReviewField(resident);
-  const dateLabel = todayLabel();
-  const recording = !!recordingId || speech.listening;
+  const dateLabel = useDemoDate();
+  const recording = inputMode === "recording" || !!recordingId || speech.listening;
 
   const dockMode: DockMode = submitted
     ? "records"
@@ -69,9 +72,8 @@ export function MemoApp() {
 
   const statusText = (() => {
     if (submitted) return "提出済";
-    if (recording) return spoken ? spoken : "録音中";
-    if (busy && writingLabel) return `${writingLabel}を書き込み中…`;
-    if (busy) return "書き込み中…";
+    if (recording) return "録音中";
+    if (busy) return "清書中…";
     if (allDone && reviewCount > 0) return `要対応 ${reviewCount}`;
     if (allDone && canSubmit) return "提出できます";
     if (nextClip) return `次 ${nextClip.time}`;
@@ -79,29 +81,24 @@ export function MemoApp() {
   })();
 
   const runClip = useCallback((clip: MemoClip) => {
+    setInputMode("recording");
     setBusy(true);
     setRecordingId(clip.id);
     setSpoken("");
-    setWritingLabel("");
 
     let i = 0;
     const typeTimer = setInterval(() => {
       i += 1;
       setSpoken(clip.transcript.slice(0, i));
       if (i >= clip.transcript.length) clearInterval(typeTimer);
-    }, 28);
+    }, 42);
 
-    const writeDelay = Math.max(clip.transcript.length * 28 + 200, clip.durationSec * 80 + 400);
+    const typeDelay = Math.max(clip.transcript.length * 42 + 280, clip.durationSec * 90 + 400);
 
     setTimeout(() => {
       clearInterval(typeTimer);
       setSpoken(clip.transcript);
       setRecordingId(null);
-
-      const lastPatch = clip.patches.at(-1);
-      if (lastPatch) {
-        setWritingLabel(getFieldLabel(clip.residentId, lastPatch.doc, lastPatch.fieldKey));
-      }
 
       setTimeout(() => {
         setResidents((prev) =>
@@ -116,11 +113,67 @@ export function MemoApp() {
           ...prev,
           [clip.residentId]: [...(prev[clip.residentId] ?? []), { ...clip, recordedAt: clip.time }],
         }));
-        setWritingLabel("");
         setBusy(false);
-      }, 450);
-    }, writeDelay);
+        setInputMode(null);
+        setTimeout(() => setSpoken(""), 1400);
+      }, 900);
+    }, typeDelay);
   }, []);
+
+  const runInputRoute = useCallback(() => {
+    const remaining = clips.slice(nextIndex);
+    if (!remaining.length || submitted || busy || recording) return;
+
+    const text = combinedTranscript(clips, nextIndex);
+    setInputMode("typing");
+    setBusy(true);
+    setSpoken("");
+
+    let i = 0;
+    const typeTimer = setInterval(() => {
+      i += 1;
+      setSpoken(text.slice(0, i));
+      if (i >= text.length) clearInterval(typeTimer);
+    }, 38);
+
+    const typeDelay = Math.max(text.length * 38 + 400, 1200);
+
+    setTimeout(() => {
+      clearInterval(typeTimer);
+      setSpoken(text);
+
+      setTimeout(() => {
+        let clipIndex = 0;
+        const applyNext = () => {
+          const clip = remaining[clipIndex];
+          if (!clip) {
+            setBusy(false);
+            setInputMode(null);
+            setTimeout(() => setSpoken(""), 1200);
+            return;
+          }
+
+          setResidents((prev) =>
+            prev.map((r) => (r.id === clip.residentId ? applyClip(r, clip) : r))
+          );
+
+          const keys = new Set(clip.patches.map((p) => `${p.doc}:${p.fieldKey}`));
+          setHighlightKeys(keys);
+          setTimeout(() => setHighlightKeys(new Set()), 1600);
+
+          setRecordedMap((prev) => ({
+            ...prev,
+            [clip.residentId]: [...(prev[clip.residentId] ?? []), { ...clip, recordedAt: clip.time }],
+          }));
+
+          clipIndex += 1;
+          setTimeout(applyNext, 520);
+        };
+
+        applyNext();
+      }, 700);
+    }, typeDelay);
+  }, [busy, clips, nextIndex, recording, submitted]);
 
   const handleSlot = (clip: MemoClip, index: number) => {
     if (submitted || busy) return;
@@ -128,11 +181,17 @@ export function MemoApp() {
   };
 
   const handleRecord = () => {
+    if (inputMode === "typing") return;
     if (speech.listening) {
       speech.stop();
       return;
     }
     if (nextClip && !busy && !submitted) runClip(nextClip);
+  };
+
+  const handleInput = () => {
+    if (inputMode === "recording" || recording || busy || submitted || !nextClip) return;
+    runInputRoute();
   };
 
   useEffect(() => {
@@ -205,6 +264,7 @@ export function MemoApp() {
     setSpoken("");
     setSubmittedIds([]);
     setActiveId("tanaka");
+    setInputMode(null);
     processedSpeechRef.current = "";
     speech.reset();
   };
@@ -218,8 +278,7 @@ export function MemoApp() {
           className={`nameChip ${activeId === r.id ? "active" : ""} ${r.priority === "urgent" ? "urgent" : ""} ${submittedIds.includes(r.id) ? "done" : ""}`}
           onClick={() => {
             setActiveId(r.id);
-            const last = (recordedMap[r.id] ?? []).at(-1);
-            setSpoken(last?.transcript ?? "");
+            setSpoken("");
           }}
         >
           {r.room} {r.name.split(" ")[0]}
@@ -229,9 +288,9 @@ export function MemoApp() {
   );
 
   return (
-    <div className="appShell">
-      <AppNav />
-
+    <>
+    <StaffShell
+      body={
       <div className={`workBody ${viewFade ? "viewFade" : ""}`}>
         {submitted ? (
           <div className="workMain workMainConfirm">
@@ -258,6 +317,7 @@ export function MemoApp() {
             >
               {statusText}
             </p>
+            {spoken ? <p className="liveSpeech">{spoken}</p> : null}
             <SummaryCard resident={resident} dateLabel={dateLabel} highlightKeys={highlightKeys} />
             <div className="workActions">
               {!resident.notes && (
@@ -294,25 +354,36 @@ export function MemoApp() {
           </div>
         )}
       </div>
-
+    }
+    dock={
       <div className="dock dockSingle">
         {speech.error && <p className="micError">{speech.error}</p>}
 
         {dockMode === "record" && (
-          <>
-            {recording && <Waveform />}
-            <MicButton
-              recording={recording}
-              disabled={busy || !nextClip}
-              onClick={handleRecord}
-            />
-          </>
+          <div className="dockDual">
+            <div>
+              {recording && <Waveform />}
+              <MicButton
+                recording={recording}
+                disabled={busy || !nextClip || inputMode === "typing"}
+                onClick={handleRecord}
+              />
+            </div>
+            <button
+              type="button"
+              className="btnSecondary"
+              disabled={busy || !nextClip || inputMode === "recording"}
+              onClick={handleInput}
+            >
+              入力
+            </button>
+          </div>
         )}
 
         {dockMode === "busy" && (
           <button type="button" className="btnPrimary btnBusy" disabled>
             <Spinner />
-            書き込み中…
+            清書中…
           </button>
         )}
 
@@ -329,17 +400,21 @@ export function MemoApp() {
         )}
 
         {dockMode === "records" && (
-          <>
-            <a href="/records" className="btnPrimary dockLink">
-              記録
+          <div className="dockTriple">
+            <button type="button" className="btnSecondary" onClick={() => printSheet("memo")}>
+              印刷
+            </button>
+            <a href="/nippo" className="btnPrimary dockLink">
+              日報
             </a>
-            <button type="button" className="btnSecondary" onClick={resetAll}>
+            <button type="button" className="btnSecondary dockTripleFull" onClick={resetAll}>
               はじめから
             </button>
-          </>
+          </div>
         )}
       </div>
-
+      }
+      extra={
       <BottomSheet open={sheetOpen} title="申し送りカルテ" onClose={() => setSheetOpen(false)}>
         <ChartPaper
           resident={resident}
@@ -352,6 +427,18 @@ export function MemoApp() {
           onNotes={onNotes}
         />
       </BottomSheet>
-    </div>
+      }
+    />
+    {submitted ? (
+      <div className="printSheet printSheetMemo" aria-hidden>
+        <ChartPaper
+          resident={resident}
+          dateLabel={dateLabel}
+          submitted
+          highlightKeys={highlightKeys}
+        />
+      </div>
+    ) : null}
+    </>
   );
 }

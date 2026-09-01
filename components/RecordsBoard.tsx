@@ -27,7 +27,7 @@ function RecordCard({ row }: { row: SubmittedRecord }) {
           {row.quote && (
             <section className="paperSection">
               <h3>本人の言葉</h3>
-              <blockquote className="quoteText">{row.quote}</blockquote>
+              <blockquote className="quoteText hero">{row.quote}</blockquote>
             </section>
           )}
           {row.assessment && (
@@ -40,7 +40,10 @@ function RecordCard({ row }: { row: SubmittedRecord }) {
             <h3>記録</h3>
             <div className="paperRows">
               {(row.extraFields ?? []).map((f) => (
-                <div key={f.key} className="paperRow">
+                <div
+                  key={f.key}
+                  className={`paperRow ${f.priority === "urgent" ? "urgent" : ""} ${f.priority === "attention" ? "attention" : ""}`}
+                >
                   <div className="paperKey">{f.label}</div>
                   <div className="paperVal">{f.value}</div>
                 </div>

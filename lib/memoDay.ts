@@ -54,11 +54,11 @@ export const CLIPS_BY_RESIDENT: Record<string, MemoClip[]> = {
       residentId: "tanaka",
       time: "10:00",
       durationSec: 8,
-      transcript: "田中さん、今朝36.8。食欲はまあまあ。",
+      transcript: "えーっと、田中さん、今朝は36.8でした。食欲はまあまあかな。",
       summary: "36.8℃",
       patches: [
         { doc: "progress", fieldKey: "vitals", value: "朝 36.8℃" },
-        { doc: "progress", fieldKey: "appetite", value: "まあまあ" },
+        { doc: "progress", fieldKey: "appetite", value: "普通" },
       ],
     },
     {
@@ -66,11 +66,11 @@ export const CLIPS_BY_RESIDENT: Record<string, MemoClip[]> = {
       residentId: "tanaka",
       time: "12:30",
       durationSec: 8,
-      transcript: "田中さん、昼は主食半分。水分少なめ。",
-      summary: "主食 半分",
+      transcript: "田中さん、お昼はね、主食が半分くらい。水分もちょっと少なめです。",
+      summary: "主食 1/2量",
       patches: [
-        { doc: "progress", fieldKey: "meal", value: "主食 半分" },
-        { doc: "progress", fieldKey: "hydration", value: "少量" },
+        { doc: "progress", fieldKey: "meal", value: "主食 1/2量" },
+        { doc: "progress", fieldKey: "hydration", value: "少量摂取" },
       ],
     },
     {
@@ -78,7 +78,7 @@ export const CLIPS_BY_RESIDENT: Record<string, MemoClip[]> = {
       residentId: "tanaka",
       time: "16:45",
       durationSec: 10,
-      transcript: "田中さん午後ちょっと熱っぽい、37.4。解熱剤はまだ出してない。ノート確認して。",
+      transcript: "田中さん、午後ちょっと熱っぽくて37.4。解熱剤はまだ出してないです。ノート確認しといてください。",
       summary: "37.4℃",
       setPriority: "urgent",
       patches: [
@@ -94,7 +94,7 @@ export const CLIPS_BY_RESIDENT: Record<string, MemoClip[]> = {
         {
           doc: "handoff",
           fieldKey: "nextAction",
-          value: "投薬記録を確認。再発熱時は看護へ",
+          value: "投薬記録を確認。再発熱時は看護へ連絡",
         },
       ],
     },
@@ -105,29 +105,29 @@ export const CLIPS_BY_RESIDENT: Record<string, MemoClip[]> = {
       residentId: "yamada",
       time: "10:00",
       durationSec: 6,
-      transcript: "山田さん、今朝は特に問題なさそう。",
+      transcript: "山田さん、今朝は特に問題なさそうですね。",
       summary: "特記なし",
-      patches: [{ doc: "progress", fieldKey: "condition", value: "特記なし" }],
+      patches: [{ doc: "progress", fieldKey: "condition", value: "特記事項なし" }],
     },
     {
       id: "y-1230",
       residentId: "yamada",
       time: "12:30",
       durationSec: 7,
-      transcript: "山田さん、昼にむせたけど大丈夫そう。",
+      transcript: "山田さん、昼にちょっとむせたけど、大丈夫そうでした。",
       summary: "むせあり",
-      patches: [{ doc: "progress", fieldKey: "meal", value: "むせあり（回復）", priority: "attention" }],
+      patches: [{ doc: "progress", fieldKey: "meal", value: "軽度むせあり（直後に回復）", priority: "attention" }],
     },
     {
       id: "y-1645",
       residentId: "yamada",
       time: "16:45",
       durationSec: 6,
-      transcript: "山田さん、むせは昼以降なし。",
+      transcript: "山田さん、むせは昼以降ないです。",
       summary: "むせなし",
       patches: [
-        { doc: "progress", fieldKey: "meal", value: "むせなし（午後）" },
-        { doc: "handoff", fieldKey: "nextAction", value: "追加対応 不要" },
+        { doc: "progress", fieldKey: "meal", value: "むせなし（午後以降）" },
+        { doc: "handoff", fieldKey: "nextAction", value: "追加対応不要" },
       ],
     },
   ],
@@ -137,7 +137,7 @@ export const CLIPS_BY_RESIDENT: Record<string, MemoClip[]> = {
       residentId: "suzuki",
       time: "10:00",
       durationSec: 6,
-      transcript: "鈴木さん、夜間トイレ2回って夜勤から。",
+      transcript: "鈴木さん、夜間トイレ2回って夜勤から聞いてます。",
       summary: "夜間トイレ2回",
       patches: [{ doc: "progress", fieldKey: "sleep", value: "夜間トイレ 2回" }],
     },
@@ -146,7 +146,7 @@ export const CLIPS_BY_RESIDENT: Record<string, MemoClip[]> = {
       residentId: "suzuki",
       time: "12:30",
       durationSec: 5,
-      transcript: "鈴木さん、昼は完食。",
+      transcript: "鈴木さん、昼は完食でした。",
       summary: "完食",
       patches: [{ doc: "progress", fieldKey: "meal", value: "完食" }],
     },
@@ -155,11 +155,11 @@ export const CLIPS_BY_RESIDENT: Record<string, MemoClip[]> = {
       residentId: "suzuki",
       time: "16:45",
       durationSec: 5,
-      transcript: "鈴木さん、変化なし。",
-      summary: "変化なし",
+      transcript: "鈴木さん、特に変化ないです。",
+      summary: "著変なし",
       patches: [
-        { doc: "progress", fieldKey: "condition", value: "変化なし" },
-        { doc: "handoff", fieldKey: "nextAction", value: "追加対応 不要" },
+        { doc: "progress", fieldKey: "condition", value: "著変なし" },
+        { doc: "handoff", fieldKey: "nextAction", value: "追加対応不要" },
       ],
     },
   ],
@@ -169,7 +169,7 @@ export const CLIPS_BY_RESIDENT: Record<string, MemoClip[]> = {
       residentId: "sato",
       time: "10:00",
       durationSec: 6,
-      transcript: "佐藤さん、起床後の血圧は安定。",
+      transcript: "佐藤さん、起きてからの血圧は安定してます。",
       summary: "血圧 安定",
       patches: [{ doc: "progress", fieldKey: "vitals", value: "血圧 安定" }],
     },
@@ -178,20 +178,20 @@ export const CLIPS_BY_RESIDENT: Record<string, MemoClip[]> = {
       residentId: "sato",
       time: "12:30",
       durationSec: 5,
-      transcript: "佐藤さん、昼のあと少し眠そう。",
-      summary: "眠気",
-      patches: [{ doc: "progress", fieldKey: "condition", value: "昼食後 眠気" }],
+      transcript: "佐藤さん、昼のあとちょっと眠そうでした。",
+      summary: "傾眠",
+      patches: [{ doc: "progress", fieldKey: "condition", value: "昼食後 傾眠傾向" }],
     },
     {
       id: "a-1645",
       residentId: "sato",
       time: "16:45",
       durationSec: 5,
-      transcript: "佐藤さん、特に変化なし。",
-      summary: "変化なし",
+      transcript: "佐藤さん、特に変化ないです。",
+      summary: "著変なし",
       patches: [
-        { doc: "progress", fieldKey: "condition", value: "変化なし" },
-        { doc: "handoff", fieldKey: "nextAction", value: "追加対応 不要" },
+        { doc: "progress", fieldKey: "condition", value: "著変なし" },
+        { doc: "handoff", fieldKey: "nextAction", value: "追加対応不要" },
       ],
     },
   ],
@@ -239,4 +239,11 @@ export function applyClip(resident: ResidentDraft, clip: MemoClip): ResidentDraf
 
   if (clip.setPriority) next.priority = clip.setPriority;
   return next;
+}
+
+export function combinedTranscript(clips: MemoClip[], fromIndex = 0) {
+  return clips
+    .slice(fromIndex)
+    .map((c) => c.transcript)
+    .join(" ");
 }

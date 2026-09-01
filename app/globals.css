@@ -233,7 +233,8 @@ a {
   box-shadow: 0 4px 16px rgba(26, 23, 20, 0.05);
   flex: 1;
   min-height: 0;
-  overflow: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   display: flex;
   flex-direction: column;
 }
@@ -586,6 +587,22 @@ a {
   padding-right: 8px;
 }
 
+.paperRow.attention {
+  background: var(--attention-light);
+  margin: 0 -8px;
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+.paperVal {
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.paperVal.emptyVal {
+  color: #c4bfb8;
+}
+
 .paperRow.flash {
   animation: flashField 1s ease;
 }
@@ -855,6 +872,10 @@ a {
 
 .micBtn.recording {
   background: var(--warn);
+}
+
+.micBtn.recording:hover:not(:disabled) {
+  background: #b03d28;
 }
 
 .micBtn:disabled {
@@ -1157,26 +1178,101 @@ a {
   margin: 0;
 }
 
-.convPreview {
+.liveSpeech {
+  flex-shrink: 0;
+  padding: 8px 12px;
+  background: var(--warn-light);
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--text-primary);
+}
+
+.chatLog {
   flex: 1;
-  min-height: 0;
-  padding: 10px 12px;
+  min-height: 240px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px 10px 12px;
   background: #fff;
   border: 1px solid var(--border);
   border-radius: 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  overflow: hidden;
 }
 
-.convPreview .convText {
+.chatLogSheet {
+  flex: none;
+  min-height: 0;
+  max-height: 160px;
+  padding: 4px 0 0;
+  margin-top: 4px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+}
+
+.chatLine {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  max-width: 88%;
+}
+
+.chatLine.staff {
+  align-self: flex-start;
+  align-items: flex-start;
+}
+
+.chatLine.resident {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+
+.chatSpeaker {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+  padding: 0 4px;
+}
+
+.chatLine.resident .chatSpeaker {
+  color: var(--accent);
+}
+
+.chatBubble {
+  margin: 0;
+  padding: 8px 12px;
   font-size: 14px;
-  line-height: 1.6;
-  display: -webkit-box;
-  -webkit-line-clamp: 4;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  line-height: 1.65;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 4px 14px 14px 14px;
+}
+
+.chatLine.resident .chatBubble {
+  background: var(--accent-light);
+  border-color: transparent;
+  border-radius: 14px 4px 14px 14px;
+}
+
+.chatTyping::after {
+  content: "";
+  display: inline-block;
+  width: 1.5px;
+  height: 0.95em;
+  background: currentColor;
+  margin-left: 3px;
+  vertical-align: -2px;
+  animation: chatCaret 0.8s step-end infinite;
+}
+
+@keyframes chatCaret {
+  50% {
+    opacity: 0;
+  }
 }
 
 .conversationLog {
@@ -1232,6 +1328,734 @@ a {
   margin: 0 auto;
 }
 
+.waveformLarge {
+  height: 36px;
+  gap: 4px;
+}
+
+.waveformLarge .waveBar {
+  width: 4px;
+}
+
+.quoteText.hero {
+  font-size: 16px;
+  line-height: 1.75;
+  padding: 14px 16px;
+}
+
+.quoteText.empty {
+  color: #c4bfb8;
+  background: transparent;
+  border-left-color: var(--border);
+}
+
+.karteMain {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.karteMain .nameRow {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--bg);
+  padding-bottom: 6px;
+}
+
+.karteRecMain {
+  overflow: hidden;
+}
+
+.karteRecBody {
+  padding-bottom: 2px;
+}
+
+.appShell.karteLive .appHeader {
+  box-shadow: inset 0 -2px 0 var(--warn);
+}
+
+.recHud {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 10px 8px;
+  border: 1.5px solid var(--warn);
+  border-radius: 12px;
+  background: var(--warn-light);
+  animation: recHudPulse 1.8s ease-in-out infinite;
+}
+
+@keyframes recHudPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(200, 75, 49, 0.18);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(200, 75, 49, 0.08);
+  }
+}
+
+.recTimer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--warn);
+  letter-spacing: 0.06em;
+}
+
+.recDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--warn);
+  animation: recDotBlink 1s step-end infinite;
+}
+
+@keyframes recDotBlink {
+  50% {
+    opacity: 0.2;
+  }
+}
+
+.recMicStage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 0 2px;
+}
+
+.recMicBtn {
+  position: relative;
+  width: 76px;
+  height: 76px;
+  border: none;
+  border-radius: 50%;
+  background: var(--warn);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.recMicBtn:hover {
+  background: #b03d28;
+}
+
+.recMicRing {
+  position: absolute;
+  inset: -8px;
+  border: 2px solid rgba(200, 75, 49, 0.45);
+  border-radius: 50%;
+  animation: recRing 1.5s ease-out infinite;
+}
+
+.recMicRingDelay {
+  animation-delay: 0.55s;
+}
+
+@keyframes recRing {
+  0% {
+    transform: scale(0.92);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(1.22);
+    opacity: 0;
+  }
+}
+
+.recMicGlyph {
+  display: grid;
+  place-items: center;
+  animation: micShake 0.65s ease-in-out infinite;
+}
+
+.recMicGlyph svg {
+  width: 32px;
+  height: 32px;
+  fill: currentColor;
+}
+
+@keyframes micShake {
+  0%,
+  100% {
+    transform: rotate(0deg) translateY(0);
+  }
+  25% {
+    transform: rotate(-10deg) translateY(1px);
+  }
+  50% {
+    transform: rotate(9deg) translateY(-1px);
+  }
+  75% {
+    transform: rotate(-6deg) translateY(1px);
+  }
+}
+
+.recNow {
+  text-align: center;
+  padding: 0 6px;
+  flex-shrink: 0;
+}
+
+.recNowSpeaker {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--warn);
+}
+
+.recCaption {
+  margin: 4px 0 0;
+  min-height: 3.2em;
+  font-size: 16px;
+  line-height: 1.65;
+  color: var(--text-primary);
+}
+
+.recHud .chatLog {
+  flex: 1;
+  min-height: 72px;
+  background: #fff;
+  max-height: none;
+}
+
+.recHud .chatBubble {
+  font-size: 13px;
+  padding: 6px 10px;
+}
+
+.chatLiveRow {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.chatLine.resident .chatLiveRow {
+  flex-direction: row-reverse;
+}
+
+.chatLiveRow .waveform {
+  flex-shrink: 0;
+  height: 18px;
+}
+
+.chatLiveRow .waveBar {
+  width: 2px;
+}
+
+.chatLine.chatSource .chatBubble {
+  box-shadow: 0 0 0 2px var(--accent);
+  background: var(--accent-light);
+}
+
+.interviewToggle {
+  width: 100%;
+  display: block;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  padding: 0 0 6px;
+  margin-bottom: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--text-secondary);
+  text-align: left;
+  cursor: pointer;
+}
+
+.interviewToggle:hover {
+  color: var(--accent);
+}
+
+.karteFlash {
+  animation: flashField 1s ease;
+  border-radius: 4px;
+}
+
+.kartePaper {
+  flex-shrink: 0;
+}
+
 .backLinkRow a {
   font-size: 13px;
+}
+
+.staffShell {
+  background: #ddd8d0;
+}
+
+.phoneStage {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  padding: 16px 24px 20px;
+}
+
+.phoneFrame {
+  width: 440px;
+  max-width: 100%;
+  min-width: 0;
+  flex: 0 1 440px;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  border-radius: 28px;
+  border: 8px solid #2a2622;
+  box-shadow: 0 16px 48px rgba(26, 23, 20, 0.22);
+  overflow: hidden;
+}
+
+.phoneFrame .workBody,
+.phoneFrame .dock {
+  max-width: none;
+  width: 100%;
+  margin: 0;
+}
+
+.phoneFrame .dock {
+  background: var(--bg);
+}
+
+.appHeaderWide {
+  padding-left: 24px;
+  padding-right: 24px;
+}
+
+.appHeaderWide .appNav {
+  max-width: 1120px;
+  width: 100%;
+  margin: 0 auto;
+  justify-content: center;
+}
+
+.nippoShell {
+  background: var(--bg);
+  overflow: hidden;
+}
+
+.nippoBody {
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 16px 24px 8px;
+}
+
+.nippoLayout {
+  display: grid;
+  grid-template-columns: minmax(280px, 340px) 1fr;
+  gap: 16px;
+  max-width: 1120px;
+  width: 100%;
+  margin: 0 auto;
+  min-height: 0;
+  min-width: 0;
+  height: 100%;
+}
+
+.nippoLayout > * {
+  min-width: 0;
+}
+
+.nippoLayoutSolo {
+  grid-template-columns: 1fr;
+}
+
+.nippoLayoutSolo .nippoQueue {
+  display: none;
+}
+
+.nippoQueueHead {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.nippoPreviewBar {
+  display: flex;
+  justify-content: flex-end;
+  flex-shrink: 0;
+}
+
+.nippoPreviewBar .btnSecondary {
+  padding: 8px 14px;
+  font-size: 13px;
+}
+
+.printSheet {
+  display: none;
+}
+
+.dockTriple {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  width: 100%;
+}
+
+.dockTriple .dockLink,
+.dockTriple .btnSecondary,
+.dockTriple .btnPrimary {
+  width: 100%;
+  max-width: none;
+}
+
+.dockTripleFull {
+  grid-column: 1 / -1;
+}
+
+.nippoQueue {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow: hidden;
+}
+
+.nippoQueueList {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-shrink: 0;
+  max-height: 168px;
+  overflow-y: auto;
+}
+
+.nippoQueueItem {
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.nippoQueueItem.active {
+  border-color: var(--text-primary);
+  background: var(--text-primary);
+  color: #fff;
+}
+
+.nippoQueueItem.flash {
+  animation: flashField 1.2s ease;
+}
+
+.nippoQueueWho {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.nippoQueueMeta {
+  font-size: 11px;
+  opacity: 0.75;
+}
+
+.nippoPreview {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.nippoPaperWrap {
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.nippoPaper {
+  min-height: 100%;
+}
+
+.nippoTable {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.nippoCards {
+  display: none;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.nippoCard {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: var(--surface);
+}
+
+.nippoCardHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.nippoCardWho {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.nippoCardRoom {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.nippoCardRow {
+  display: flex;
+  gap: 8px;
+  font-size: 12px;
+  line-height: 1.45;
+  margin-top: 4px;
+}
+
+.nippoCardKey {
+  flex: 0 0 3.5em;
+  color: var(--text-secondary);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+
+.nippoCardVal {
+  flex: 1;
+  min-width: 0;
+  word-break: break-word;
+}
+
+.nippoCard.urgent {
+  background: var(--warn-light);
+}
+
+.nippoCard.attention {
+  background: var(--attention-light);
+}
+
+.nippoCard.flash {
+  animation: flashField 1s ease;
+}
+
+.nippoTableWrap {
+  display: block;
+}
+
+.dockDual {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  width: 100%;
+  align-items: center;
+}
+
+.dockDual .micBtn,
+.dockDual .btnPrimary,
+.dockDual .btnSecondary {
+  width: 100%;
+  max-width: none;
+}
+
+.nippoDockRow {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  max-width: 360px;
+  margin: 0 auto;
+}
+
+.nippoDockRow .btnPrimary,
+.nippoDockRow .btnSecondary {
+  flex: 1;
+  max-width: none;
+}
+
+.nippoRecOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(26, 23, 20, 0.92);
+  display: flex;
+  flex-direction: column;
+  padding: 24px 20px calc(20px + env(safe-area-inset-bottom));
+}
+
+.nippoRecOverlay .recHud {
+  flex: 1;
+  min-height: 0;
+}
+
+.nippoTable th {
+  text-align: left;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--text-primary);
+  padding: 8px 8px 8px 0;
+  white-space: nowrap;
+}
+
+.nippoTable td {
+  padding: 10px 8px 10px 0;
+  border-bottom: 1px dotted var(--border);
+  vertical-align: top;
+  line-height: 1.45;
+}
+
+.nippoTable th:nth-child(1),
+.nippoTable td:nth-child(1) {
+  width: 3.5em;
+}
+
+.nippoTable th:nth-child(2),
+.nippoTable td:nth-child(2) {
+  width: 4.5em;
+}
+
+.nippoTable th:nth-child(3),
+.nippoTable td:nth-child(3),
+.nippoTable th:nth-child(5),
+.nippoTable td:nth-child(5),
+.nippoTable th:nth-child(6),
+.nippoTable td:nth-child(6) {
+  width: 22%;
+}
+
+.nippoTable td {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: break-word;
+}
+
+.nippoTable tr.urgent td {
+  background: var(--warn-light);
+}
+
+.nippoTable tr.attention td {
+  background: var(--attention-light);
+}
+
+.nippoTable tr.flash td {
+  animation: flashField 1s ease;
+}
+
+.nippoDock {
+  flex-shrink: 0;
+  width: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 8px 24px calc(12px + env(safe-area-inset-bottom));
+}
+
+.nippoDock .btnPrimary {
+  max-width: 360px;
+}
+
+@media (max-width: 860px) {
+  .nippoLayout {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+
+  .nippoQueueList {
+    max-height: 120px;
+  }
+
+  .nippoTableWrap {
+    display: none;
+  }
+
+  .nippoCards {
+    display: flex;
+  }
+}
+
+@media (max-width: 560px) {
+  .staffShell {
+    background: var(--bg);
+  }
+
+  .phoneStage {
+    padding: 0;
+  }
+
+  .phoneFrame {
+    width: 100%;
+    max-width: none;
+    flex: 1 1 auto;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+  }
+}
+
+@media print {
+  html.print-memo-sheet .appShell,
+  html.print-karte-sheet .appShell,
+  html.print-record-sheet .appShell,
+  html.print-record-sheet .nippoShell,
+  html.print-memo-sheet .nippoShell,
+  html.print-karte-sheet .nippoShell {
+    display: none !important;
+  }
+
+  html.print-memo-sheet .printSheetMemo,
+  html.print-karte-sheet .printSheetKarte,
+  html.print-record-sheet .printSheetRecord {
+    display: block !important;
+    position: static;
+    width: 100%;
+    padding: 0;
+  }
+
+  html.print-nippo-sheet .appHeader,
+  html.print-nippo-sheet .nippoQueue,
+  html.print-nippo-sheet .nippoDock,
+  html.print-nippo-sheet .phoneStage,
+  html.print-nippo-sheet .nippoRecOverlay {
+    display: none !important;
+  }
+
+  .appHeader,
+  .nippoQueue,
+  .nippoDock,
+  .phoneStage {
+    display: none !important;
+  }
+
+  .appShell,
+  .nippoBody,
+  .nippoLayout,
+  .nippoPaperWrap {
+    height: auto;
+    overflow: visible;
+    display: block;
+    max-width: none;
+    padding: 0;
+  }
 }
