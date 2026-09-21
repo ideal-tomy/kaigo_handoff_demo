@@ -1,14 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { todayLabel } from "@/lib/facility";
 
 export function useDemoDate() {
-  const [dateLabel, setDateLabel] = useState("");
-
-  useEffect(() => {
-    setDateLabel(todayLabel());
-  }, []);
-
+  const [dateLabel] = useState(todayLabel);
   return dateLabel;
 }

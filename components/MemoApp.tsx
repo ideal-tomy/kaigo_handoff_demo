@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { BottomSheet } from "@/components/BottomSheet";
 import { ChartPaper } from "@/components/ChartPaper";
@@ -8,6 +9,7 @@ import { Spinner } from "@/components/Spinner";
 import { StaffShell } from "@/components/StaffShell";
 import { SummaryCard } from "@/components/SummaryCard";
 import { useDemoDate } from "@/hooks/useDemoDate";
+import { useSelectionReturn } from "@/hooks/useSelectionReturn";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import {
   countReviewFields,
@@ -56,6 +58,7 @@ export function MemoApp() {
   const reviewCount = countReviewFields(resident);
   const firstReview = getFirstReviewField(resident);
   const dateLabel = useDemoDate();
+  const { withFrom } = useSelectionReturn();
   const recording = inputMode === "recording" || !!recordingId || speech.listening;
 
   const dockMode: DockMode = submitted
@@ -404,9 +407,9 @@ export function MemoApp() {
             <button type="button" className="btnSecondary" onClick={() => printSheet("memo")}>
               印刷
             </button>
-            <a href="/nippo" className="btnPrimary dockLink">
+            <Link href={withFrom("/nippo")} className="btnPrimary dockLink">
               日報
-            </a>
+            </Link>
             <button type="button" className="btnSecondary dockTripleFull" onClick={resetAll}>
               はじめから
             </button>

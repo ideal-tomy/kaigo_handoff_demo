@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useSelectionReturn } from "@/hooks/useSelectionReturn";
 
 const LINKS = [
   { href: "/", label: "申し送り" },
@@ -12,15 +13,21 @@ const LINKS = [
 export function AppNav({ title }: { title?: string }) {
   const pathname = usePathname();
   const nippoActive = pathname === "/nippo" || pathname === "/records";
+  const { returnUrl, withFrom } = useSelectionReturn();
 
   return (
     <header className="appHeader appHeaderWide">
+      {returnUrl ? (
+        <a href={returnUrl} className="appNavReturn">
+          ← 紹介へ
+        </a>
+      ) : null}
       {title ? <h1 className="appHeaderTitle">{title}</h1> : null}
       <nav className="appNav">
         {LINKS.map((link) => (
           <Link
             key={link.href}
-            href={link.href}
+            href={withFrom(link.href)}
             className={`appNavLink ${
               pathname === link.href ||
               (link.href === "/" && pathname === "/memo") ||

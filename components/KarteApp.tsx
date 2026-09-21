@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { KartePaper } from "@/components/KartePaper";
 import { MicButton } from "@/components/MicButton";
@@ -7,6 +8,7 @@ import { RecHud } from "@/components/RecHud";
 import { Spinner } from "@/components/Spinner";
 import { StaffShell } from "@/components/StaffShell";
 import { useDemoDate } from "@/hooks/useDemoDate";
+import { useSelectionReturn } from "@/hooks/useSelectionReturn";
 import { fieldNeedsFix } from "@/lib/fieldUtils";
 import { nowTime } from "@/lib/facility";
 import { KARTE_RESIDENTS, karteInputSummary } from "@/lib/karteSessions";
@@ -53,6 +55,7 @@ export function KarteApp() {
   const person = KARTE_RESIDENTS.find((r) => r.id === residentId) ?? KARTE_RESIDENTS[0];
   const note = person.session.progress;
   const dateLabel = useDemoDate();
+  const { withFrom } = useSelectionReturn();
   const firstReview = ready ? fields.find(fieldNeedsFix) : undefined;
   const displayFields = fields.map((f) =>
     revealedKeys.has(f.key) ? f : { ...f, value: "", needsReview: false, priority: undefined }
@@ -381,9 +384,9 @@ export function KarteApp() {
             <button type="button" className="btnSecondary" onClick={() => printSheet("karte")}>
               印刷
             </button>
-            <a href="/nippo" className="btnPrimary dockLink">
+            <Link href={withFrom("/nippo")} className="btnPrimary dockLink">
               日報
-            </a>
+            </Link>
             <button type="button" className="btnSecondary dockTripleFull" onClick={() => hardReset()}>
               戻る
             </button>
