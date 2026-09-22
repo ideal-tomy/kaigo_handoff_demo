@@ -1,0 +1,110 @@
+.ki-story * { box-sizing: border-box; }
+.ki-story { --intro-accent: #7ec9b5; border-radius: 16px; background: #111e2e; color: #f0f5fc; overflow: hidden; box-shadow: 0 18px 44px #203a5514; font-family: "Noto Sans JP", "Segoe UI", "Hiragino Sans", sans-serif; }
+.ki-story-top { padding: 15px 20px; display: flex; justify-content: space-between; gap: 8px; border-bottom: 1px solid #ffffff13; font-size: 11px; color: #b7c9dc; }
+.ki-story-top span:first-child { color: #fff; font-weight: 600; }
+.ki-viewport { height: 424px; position: relative; overflow: hidden; background: radial-gradient(ellipse at 50% 40%, #263b53, #101c2b 80%); }
+.ki-stage { width: 920px; height: 350px; position: absolute; transform-origin: 0 0; will-change: transform; }
+.ki-device { position: absolute; background: #f6f8fb; color: #263b50; overflow: hidden; border: 2px solid #50647c; box-shadow: 0 16px 28px #0005; transition: opacity .85s ease, filter .85s ease, box-shadow .85s ease, border-color .85s ease; }
+.ki-device.ki-active { border-color: var(--intro-accent); box-shadow: 0 0 0 2px #7ec9b524, 0 0 28px #7ec9b520; opacity: 1; filter: none; }
+.ki-device.ki-idle { opacity: 0; filter: saturate(.3); box-shadow: none; pointer-events: none; }
+.ki-device-bar { height: 30px; background: #1a1714; color: #fff; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; font-size: 11px; font-weight: 700; border-bottom: 1px solid #0006; }
+.ki-device-bar span { font-size: 9px; color: #c9c3bb; font-weight: 400; }
+.ki-phone { top: 5px; height: 340px; border-radius: 26px; padding: 22px 6px 10px; background: #182533; }
+.ki-memo { left: 40px; width: 236px; }
+.ki-karte { left: 320px; width: 268px; }
+.ki-nippo { left: 620px; width: 268px; }
+.ki-phone .ki-device-bar { border-radius: 10px 10px 0 0; }
+.ki-island { position: absolute; top: 7px; height: 7px; width: 46px; border-radius: 5px; background: #030b14; }
+.ki-memo .ki-island { left: 95px; }
+.ki-karte .ki-island, .ki-nippo .ki-island { left: 111px; }
+.ki-phone-body { background: var(--bg, #f5f3ee); height: 276px; border-radius: 0 0 15px 15px; overflow: hidden; position: relative; }
+.ki-hud { position: absolute; bottom: 0; left: 0; right: 0; min-height: 88px; padding: 18px 20px; background: linear-gradient(transparent, #101c2b 30%); }
+.ki-hud p { margin: 12px auto 0; max-width: 580px; text-align: center; font-size: 13px; line-height: 1.8; }
+.ki-dots { display: flex; gap: 5px; justify-content: center; }
+.ki-dots span { width: 18px; height: 3px; background: #ffffff30; border-radius: 2px; }
+.ki-dots .ki-current { background: var(--intro-accent); }
+.ki-controls { display: flex; justify-content: space-between; align-items: center; gap: 8px; min-height: 52px; padding: 8px 18px; border-top: 1px solid #ffffff14; }
+.ki-controls p { font-size: 10px; color: #b7c9dc; margin: 0; }
+.ki-controls > div { display: flex; gap: 8px; }
+.ki-controls button { border: 1px solid #63788f; color: #e9f2fc; background: transparent; border-radius: 6px; font-size: 11px; min-height: 34px; padding: 6px 10px; cursor: pointer; }
+.ki-controls button:focus-visible { outline: 3px solid #4f9acf; outline-offset: 4px; }
+
+.kh-scale {
+  transform: scale(0.58);
+  transform-origin: top left;
+  width: 390px;
+  height: 476px;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg, #f5f3ee);
+}
+.kh-scale .workMain {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  padding: 8px 10px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.kh-scale .summaryCard { min-height: 0; }
+.kh-scale .dock { flex-shrink: 0; }
+.kh-mini-nav {
+  display: flex;
+  gap: 10px;
+  padding: 8px 12px 6px;
+  background: #1a1714;
+  color: #9a938c;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.kh-mini-nav .is-on {
+  color: #fff;
+  box-shadow: inset 0 -2px 0 #fff;
+  padding-bottom: 4px;
+}
+.kh-nippo-cards { display: flex !important; }
+.kh-nippo-scale .chartPaper {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  margin: 8px 10px 0;
+}
+.ki-karte .recHud { min-height: 0; flex: 1; margin: 8px 8px 0; }
+.ki-karte .recHud .chatLog { min-height: 48px; }
+
+.ki-embed-intro {
+  margin: 0;
+  min-height: 100dvh;
+  background: #111e2e;
+  color: #f0f5fc;
+}
+.ki-embed-intro .ki-story {
+  border-radius: 0;
+  box-shadow: none;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+.ki-embed-intro .ki-viewport {
+  flex: 1;
+  min-height: 360px;
+}
+
+html:has(.ki-embed-intro),
+html:has(.ki-embed-intro) body {
+  background: #111e2e;
+  overflow: hidden;
+  min-height: 100dvh;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ki-story *, .ki-story *::before, .ki-story *::after { transition: none !important; animation: none !important; }
+}
+@media (max-width: 600px) {
+  .ki-story-top { padding: 13px 12px; font-size: 9px; }
+  .ki-hud { padding: 14px 12px; }
+  .ki-hud p { font-size: 12px; }
+  .ki-controls { padding: 8px 12px; }
+}
