@@ -108,3 +108,34 @@ html:has(.ki-embed-intro) body {
   .ki-hud p { font-size: 12px; }
   .ki-controls { padding: 8px 12px; }
 }
+
+html.ki-embed-stage-root,
+html.ki-embed-stage-root body,
+.ki-embed-stage,
+.ki-embed-stage .ki-story {
+  margin: 0;
+  min-height: 0 !important;
+  background: #fff !important;
+}
+.ki-story-stage {
+  border-radius: 0;
+  box-shadow: none;
+  overflow: visible;
+  background: #fff;
+  color: #1c2740;
+  font-family: "Segoe UI", "Hiragino Sans", "Noto Sans JP", sans-serif;
+}
+.ki-story-stage .ki-viewport {
+  height: 360px;
+  background: #fff;
+}
+.ki-motion {
+  margin: 12px auto 0;
+  max-width: 580px;
+  padding: 0 12px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.7;
+  color: #26418e;
+}
